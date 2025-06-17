@@ -1,0 +1,131 @@
+.product-slider {
+  display: flex;
+  overflow-x: auto;
+  gap: 2.2rem;
+  padding: 2.5rem 0 2.5rem 1.5rem;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none; /* Firefox */
+}
+.product-slider::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.slider-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.slider-card {
+  background: #0a0a0a;
+  border-radius: 18px;
+  min-width: 280px;
+  max-width: 280px;
+  flex: 0 0 280px;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  scroll-snap-align: start;
+  font-family: 'Share Tech Mono', 'Roboto Mono', 'Consolas', monospace;
+  position: relative;
+  transition: transform 0.22s cubic-bezier(0.4,0,0.2,1), box-shadow 0.22s cubic-bezier(0.4,0,0.2,1);
+  cursor: pointer;
+  padding: 0.7rem 0.7rem 1.2rem 0.7rem;
+  box-sizing: border-box;
+}
+
+.slider-card:hover {
+  transform: translateY(-12px) scale(1.045) rotate(-1.2deg);
+  box-shadow: 0 12px 36px 0 #6c4f8c55, 0 0 0 8px #fff2 inset;
+  z-index: 2;
+}
+
+.slider-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #181818;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.slider-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.slider-badge {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  background: #6c4f8c;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: bold;
+  padding: 0.2em 1em;
+  border-radius: 8px;
+  letter-spacing: 1px;
+}
+.slider-info {
+  padding: 1.1rem 0.2rem 0 0.2rem;
+  width: 100%;
+  text-align: center;
+}
+.slider-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.7rem;
+  letter-spacing: 1px;
+}
+.slider-prices {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.7rem;
+}
+.slider-old-price {
+  color: #888;
+  text-decoration: line-through;
+  font-size: 1rem;
+}
+.slider-new-price {
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.slider-emi {
+  font-size: 0.95rem;
+  color: #fff;
+  margin-top: 0.5rem;
+}
+.slider-emi-btn {
+  background: #6c4f8c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.2em 0.8em;
+  font-size: 0.95rem;
+  font-family: inherit;
+  margin-left: 0.5em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.slider-emi-btn:hover {
+  background: #fff;
+  color: #6c4f8c;
+}
+@media (max-width: 600px) {
+  .slider-card, .slider-img-wrap {
+    min-width: 140px;
+    max-width: 140px;
+  }
+  .slider-img-wrap {
+    aspect-ratio: 1 / 1;
+    height: auto;
+  }
+} 

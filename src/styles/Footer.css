@@ -1,0 +1,152 @@
+.footer {
+  background: #1b0d24;
+  color: #fff;
+  font-family: 'Share Tech Mono', 'Roboto Mono', 'Consolas', monospace;
+  padding: 3rem 0 1.2rem 0;
+  margin-top: 2rem;
+}
+
+.footer-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.footer-col {
+  flex: 1 1 250px;
+  min-width: 220px;
+  margin-bottom: 2rem;
+}
+
+.footer-col h3 {
+  font-size: 1.3rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  margin-bottom: 1.2rem;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.footer-col.about p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #fff;
+  margin: 0;
+}
+
+.footer-col.more ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem 0;
+}
+
+.footer-col.more ul li {
+  margin-bottom: 0.7rem;
+}
+
+.footer-col.more ul li a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.05rem;
+  letter-spacing: 2px;
+  transition: color 0.2s;
+}
+
+.footer-col.more ul li a:hover {
+  color: #6c4f8c;
+}
+
+.footer-socials {
+  display: flex;
+  gap: 1.2rem;
+  margin-top: 0.5rem;
+  justify-content: center;
+  width: 100%;
+}
+
+.footer-socials a {
+  color: #fff;
+  font-size: 1.5rem;
+  transition: color 0.2s;
+}
+
+.footer-socials a:hover {
+  color: #6c4f8c;
+}
+
+.logo-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer-logo-text {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 4px;
+  text-align: right;
+  line-height: 1.1;
+  text-shadow: 2px 2px 0 #6c4f8c, 0 0 8px #fff2;
+}
+
+.footer-logo-img {
+  display: block;
+  max-width: 380px;
+  max-height: 240px;
+  width: auto;
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.footer-bottom {
+  text-align: center;
+  color: #fff;
+  font-size: 1rem;
+  margin-top: 1.5rem;
+  letter-spacing: 2px;
+}
+
+.footer-social-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px #0003;
+  transition: transform 0.18s;
+}
+
+.footer-social-icon:hover {
+  transform: scale(1.08) rotate(-3deg);
+}
+
+@media (max-width: 600px) {
+  .footer-social-icon {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+@media (max-width: 900px) {
+  .footer-main {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .logo-col {
+    justify-content: flex-start;
+    margin-top: 2rem;
+  }
+  .footer-logo-text {
+    text-align: left;
+  }
+  .footer-logo-img {
+    max-width: 180px;
+    max-height: 80px;
+  }
+} 

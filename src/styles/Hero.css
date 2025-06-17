@@ -1,0 +1,55 @@
+.hero-section {
+  background: url('../images/vintage-vinyl-bg.jpg') center center/cover no-repeat;
+  color: #fff;
+  padding: 5rem 2rem 4rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.hero-content {
+  max-width: 600px;
+  text-align: center;
+}
+
+.hero-content h1 {
+  font-size: 3rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+}
+
+.hero-content p {
+  font-size: 1.3rem;
+  margin-bottom: 2.5rem;
+  font-weight: 500;
+}
+
+.hero-btn {
+  background: #ff3c6f;
+  color: #fff;
+  padding: 0.9rem 2.2rem;
+  border: none;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-decoration: none;
+  transition: background 0.2s;
+  box-shadow: 0 4px 16px rgba(255,60,111,0.15);
+}
+
+.hero-btn:hover {
+  background: #fff;
+  color: #ff3c6f;
+}
+
+@media (max-width: 600px) {
+  .hero-content h1 {
+    font-size: 2rem;
+  }
+  .hero-section {
+    padding: 3rem 1rem 2rem 1rem;
+  }
+} 

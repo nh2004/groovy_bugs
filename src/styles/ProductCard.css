@@ -1,0 +1,85 @@
+.product-card {
+  background: #0a0a0a;
+  border-radius: 18px;
+  box-shadow: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.22s cubic-bezier(0.4,0,0.2,1), box-shadow 0.22s cubic-bezier(0.4,0,0.2,1);
+  margin: 1rem 0.5rem;
+  min-width: 220px;
+  max-width: 320px;
+  font-family: 'Share Tech Mono', 'Roboto Mono', 'Consolas', monospace;
+}
+
+.product-card:hover {
+  transform: translateY(-12px) scale(1.045) rotate(-1.2deg);
+  box-shadow: 0 12px 36px 0 #6c4f8c55, 0 0 0 8px #fff2 inset;
+  z-index: 2;
+}
+
+.product-image {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  background: #181818;
+}
+
+.product-info {
+  padding: 1.2rem 1rem 1.5rem 1rem;
+  text-align: center;
+}
+
+.product-info h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.5rem;
+  font-family: 'Share Tech Mono', 'Roboto Mono', 'Consolas', monospace;
+}
+
+.product-price {
+  color: #6c4f8c;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  font-family: 'Share Tech Mono', 'Roboto Mono', 'Consolas', monospace;
+}
+
+.add-cart-btn {
+  background: #ff3c6f;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 0.6rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.add-cart-btn:hover {
+  background: #fff;
+  color: #ff3c6f;
+}
+
+.product-link {
+  color: #fff;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.product-link:hover {
+  color: #ff3c6f;
+}
+
+@media (max-width: 600px) {
+  .product-card {
+    min-width: 160px;
+    max-width: 100%;
+  }
+  .product-image {
+    height: 140px;
+  }
+} 
