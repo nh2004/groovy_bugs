@@ -55,8 +55,8 @@ const addressSchema = new mongoose.Schema({
 const userSchema = new mongoose.Schema({
   clerkId: {
     type: String,
-    required: true,
-    unique: true
+    unique: true,
+    sparse: true // Allow null values for non-Clerk users
   },
   email: {
     type: String,
@@ -64,6 +64,12 @@ const userSchema = new mongoose.Schema({
     unique: true,
     trim: true,
     lowercase: true
+  },
+  password: {
+    type: String,
+    required: function() {
+      return !this.clerkId; // Password required only for non-Clerk users
+    }
   },
   firstName: {
     type: String,
