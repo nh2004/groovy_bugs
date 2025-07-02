@@ -1,5 +1,4 @@
 import React from "react";
-import "../styles/InfoCards.css";
 
 const cards = [
   {
@@ -20,19 +19,34 @@ const cards = [
 ];
 
 const InfoCards = () => (
-  <div className="info-cards-section">
-    <div className="info-cards-grid">
-      {cards.map((card, i) => (
-        <div className="info-card" key={i}>
-          <img src={card.image} alt={card.heading} className="info-card-img" />
-          <div className="info-card-content">
-            <div className="info-card-heading">{card.heading}</div>
-            <div className="info-card-desc">{card.desc}</div>
+  <div className="bg-main-bg py-20">
+    <div className="max-w-7xl mx-auto px-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {cards.map((card, i) => (
+          <div 
+            key={i}
+            className="group bg-gray-900 rounded-2xl overflow-hidden transition-all duration-300 hover:transform hover:scale-105 hover:shadow-2xl border border-gray-800 hover:border-main-purple"
+          >
+            <div className="aspect-video overflow-hidden">
+              <img 
+                src={card.image} 
+                alt={card.heading} 
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+              />
+            </div>
+            <div className="p-6">
+              <h3 className="text-2xl font-black text-white mb-4 font-mono uppercase tracking-wider">
+                {card.heading}
+              </h3>
+              <p className="text-gray-300 leading-relaxed font-mono">
+                {card.desc}
+              </p>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   </div>
 );
 
-export default InfoCards; 
+export default InfoCards;

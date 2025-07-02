@@ -20,8 +20,13 @@ const ProductDetails = () => {
 
   if (!product) {
     return (
-      <div className="flex items-center justify-center min-h-96 text-white text-xl">
-        Product not found.
+      <div className="flex items-center justify-center min-h-96 text-white text-xl bg-main-bg">
+        <div className="text-center">
+          <p className="font-mono text-2xl mb-4">Product not found.</p>
+          <button className="bg-main-purple text-white border-none rounded-2xl py-3 px-6 font-mono font-bold hover:bg-purple-600 transition-colors duration-200">
+            Back to Shop
+          </button>
+        </div>
       </div>
     );
   }
@@ -38,77 +43,118 @@ const ProductDetails = () => {
   };
 
   return (
-    <section className="flex flex-row items-center justify-center gap-16 bg-transparent rounded-none py-10 px-8 max-w-6xl mx-auto my-8 shadow-none animate-fade-in">
-      <div className="flex-1 flex items-center justify-center min-w-80 max-w-130">
-        <img 
-          src={product.image} 
-          alt={product.name} 
-          className="w-full max-w-130 h-auto object-contain bg-gray-800 block mx-auto shadow-none border-6 border-gray-100 shadow-sm"
-          style={{ aspectRatio: '4/5' }}
-        />
-      </div>
-      
-      <div className="flex-1 text-white flex flex-col gap-5 items-start justify-center min-w-80 max-w-135 w-full">
-        <h2 className="font-black text-5xl font-bold text-white mb-3 tracking-wide uppercase text-shadow-none text-left w-full">
-          {product.name}
-        </h2>
-        
-        <div className="text-xl font-bold text-white text-left w-full">
-          ₹{product.price}
-        </div>
-        
-        <div className="text-lg text-gray-300 mb-6 max-w-175 ml-0 mr-0 text-left w-full">
-          {product.description}
-        </div>
-        
-        {isPoster && (
-          <div className="mb-5 flex flex-col items-start gap-2 text-left w-full">
-            <label htmlFor="size-select" className="text-white font-medium">Size</label>
-            <select
-              id="size-select"
-              value={size}
-              onChange={e => setSize(e.target.value)}
-              className="py-2 px-5 rounded-lg border-2 border-main-purple bg-gray-800 text-white text-base font-inherit mt-1"
-            >
-              {posterSizes.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+    <section className="bg-main-bg min-h-screen py-20">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          {/* Product Image */}
+          <div className="flex items-center justify-center">
+            <div className="relative max-w-lg w-full">
+              <img 
+                src={product.image} 
+                alt={product.name} 
+                className="w-full h-auto object-contain bg-gray-800 rounded-2xl border-4 border-gray-700 shadow-2xl"
+                style={{ aspectRatio: '4/5' }}
+              />
+              {product.featured && (
+                <span className="absolute top-4 left-4 bg-main-purple text-white text-sm font-bold py-2 px-4 rounded-lg tracking-wide font-mono">
+                  FEATURED
+                </span>
+              )}
+            </div>
           </div>
-        )}
-        
-        <div className="mb-5 flex flex-col items-start gap-2 text-left w-full">
-          <label htmlFor="quantity-input" className="text-white font-medium">Quantity</label>
-          <div className="flex items-center gap-2">
+          
+          {/* Product Info */}
+          <div className="text-white space-y-6">
+            <div>
+              <h1 className="font-black text-5xl font-mono text-white mb-4 tracking-wide uppercase">
+                {product.name}
+              </h1>
+              
+              <div className="flex items-center gap-4 mb-6">
+                <span className="text-3xl font-bold text-white font-mono">
+                  ₹{product.price}
+                </span>
+                {product.originalPrice && (
+                  <span className="text-xl text-gray-400 line-through font-mono">
+                    ₹{product.originalPrice}
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            <div className="text-lg text-gray-300 leading-relaxed font-mono">
+              {product.description}
+            </div>
+            
+            {/* Size Selection for Posters */}
+            {isPoster && (
+              <div className="space-y-3">
+                <label htmlFor="size-select" className="block text-white font-medium font-mono text-lg">
+                  Size
+                </label>
+                <select
+                  id="size-select"
+                  value={size}
+                  onChange={e => setSize(e.target.value)}
+                  className="w-full py-3 px-4 rounded-lg border-2 border-main-purple bg-gray-800 text-white text-base font-mono focus:border-purple-400 focus:outline-none"
+                >
+                  {posterSizes.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            {/* Quantity Selection */}
+            <div className="space-y-3">
+              <label htmlFor="quantity-input" className="block text-white font-medium font-mono text-lg">
+                Quantity
+              </label>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setQuantity(q => Math.max(1, q - 1))} 
+                  className="bg-main-purple text-white border-none rounded-lg w-12 h-12 text-xl font-bold cursor-pointer transition-colors duration-200 flex items-center justify-center hover:bg-purple-600 font-mono"
+                >
+                  -
+                </button>
+                <input
+                  id="quantity-input"
+                  type="number"
+                  min="1"
+                  value={quantity}
+                  onChange={e => setQuantity(Math.max(1, Number(e.target.value)))}
+                  className="w-20 text-center text-lg border-2 border-main-purple rounded-lg bg-gray-800 text-white py-3 px-2 font-mono focus:border-purple-400 focus:outline-none"
+                />
+                <button 
+                  onClick={() => setQuantity(q => q + 1)} 
+                  className="bg-main-purple text-white border-none rounded-lg w-12 h-12 text-xl font-bold cursor-pointer transition-colors duration-200 flex items-center justify-center hover:bg-purple-600 font-mono"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+            
+            {/* Add to Cart Button */}
             <button 
-              onClick={() => setQuantity(q => Math.max(1, q - 1))} 
-              className="bg-main-purple text-white border-none rounded-lg w-9 h-9 text-lg font-bold cursor-pointer transition-colors duration-200 flex items-center justify-center hover:bg-white hover:text-main-purple"
+              className="bg-accent-pink text-white border-none rounded-2xl py-4 px-12 text-xl font-bold cursor-pointer transition-all duration-200 hover:bg-pink-600 hover:transform hover:scale-105 font-mono tracking-wider uppercase shadow-lg"
+              onClick={handleAddToCart}
             >
-              -
+              Add to Cart
             </button>
-            <input
-              id="quantity-input"
-              type="number"
-              min="1"
-              value={quantity}
-              onChange={e => setQuantity(Math.max(1, Number(e.target.value)))}
-              className="w-12 text-center text-lg border-2 border-main-purple rounded-lg bg-gray-800 text-white py-1 px-1"
-            />
-            <button 
-              onClick={() => setQuantity(q => q + 1)} 
-              className="bg-main-purple text-white border-none rounded-lg w-9 h-9 text-lg font-bold cursor-pointer transition-colors duration-200 flex items-center justify-center hover:bg-white hover:text-main-purple"
-            >
-              +
-            </button>
+            
+            {/* Product Features */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-8 border-t border-gray-700">
+              <div className="text-center p-4 bg-gray-900 rounded-lg">
+                <h4 className="font-bold text-white mb-2 font-mono">Free Shipping</h4>
+                <p className="text-sm text-gray-400 font-mono">On orders over ₹1500</p>
+              </div>
+              <div className="text-center p-4 bg-gray-900 rounded-lg">
+                <h4 className="font-bold text-white mb-2 font-mono">Premium Quality</h4>
+                <p className="text-sm text-gray-400 font-mono">300gsm matte finish</p>
+              </div>
+            </div>
           </div>
         </div>
-        
-        <button 
-          className="bg-accent-pink text-white border-none rounded-2xl py-3 px-8 text-lg font-bold cursor-pointer max-w-44 transition-colors duration-200 self-start hover:bg-white hover:text-accent-pink"
-          onClick={handleAddToCart}
-        >
-          Add to Cart
-        </button>
       </div>
     </section>
   );
