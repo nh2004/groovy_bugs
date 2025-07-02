@@ -1,13 +1,85 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --retro-yellow: #fff;
+    --retro-teal: #6c4f8c;
+    --retro-pink: #6c4f8c;
+    --retro-blue: #23243a;
+    --retro-offwhite: #fff;
+    --main-bg: #0a0a0a;
+    --main-purple: #6c4f8c;
+    --main-white: #fff;
+  }
+
+  body {
+    @apply bg-main-bg text-main-white min-h-screen font-mono;
+  }
+
+  h1, h2, h3 {
+    @apply font-display tracking-wider;
+  }
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+@layer components {
+  .section {
+    @apply max-w-6xl mx-auto px-6 py-10 bg-transparent;
+  }
+
+  .section-title {
+    @apply font-mono text-3xl font-black text-main-white mt-18 mb-3 tracking-wider text-center uppercase;
+    text-shadow: 2px 2px 0 #000, 0 0 8px #6c4f8c44;
+  }
+
+  .btn-primary {
+    @apply font-mono text-lg border-2 border-main-purple bg-main-purple text-main-white shadow-lg tracking-wide rounded-2xl px-6 py-2.5 font-bold cursor-pointer transition-all duration-200 hover:bg-main-white hover:text-main-purple active:scale-95;
+  }
+
+  .card {
+    @apply shadow-retro rounded-2xl bg-card-bg;
+  }
+
+  .grain-overlay {
+    @apply pointer-events-none fixed top-0 left-0 w-screen h-screen z-50 opacity-18 mix-blend-multiply;
+    background: url('./images/grain.png') repeat;
+  }
+
+  .product-card {
+    @apply bg-main-bg rounded-2xl overflow-hidden flex flex-col items-center transition-all duration-300 ease-out mx-2 my-4 min-w-56 max-w-80 font-mono cursor-pointer hover:transform hover:-translate-y-3 hover:scale-105 hover:-rotate-1 hover:shadow-glow hover:z-10;
+    box-shadow: 0 12px 36px 0 #6c4f8c55, 0 0 0 8px #fff2 inset;
+  }
+
+  .login-bg {
+    background: url('/images/bg.jpg') center center/cover no-repeat;
+    @apply min-h-screen w-screen;
+  }
+}
+
+@layer utilities {
+  .fade-in {
+    @apply animate-fade-in;
+  }
+  
+  .pop {
+    @apply animate-pop;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-main-purple rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-purple-400;
 }

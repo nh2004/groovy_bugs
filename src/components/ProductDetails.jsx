@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import "../styles/ProductDetails.css";
+import { useParams } from "react-router-dom";
+import { useProducts } from "../context/ProductContext";
+import { useCart } from "../context/CartContext";
 
 const posterSizes = [
   { value: "A5", label: "A5 - 17 Posters" },
@@ -7,36 +9,66 @@ const posterSizes = [
   { value: "A3", label: "A3 - 17 Posters" }
 ];
 
-const ProductDetails = ({ product, onAddToCart }) => {
+const ProductDetails = () => {
+  const { id } = useParams();
+  const { getProductById } = useProducts();
+  const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [size, setSize] = useState(posterSizes[0].value);
 
+  const product = getProductById(id);
+
   if (!product) {
-    return <div className="product-details-empty">Product not found.</div>;
+    return (
+      <div className="flex items-center justify-center min-h-96 text-white text-xl">
+        Product not found.
+      </div>
+    );
   }
+
   const isPoster = product.category && product.category.toLowerCase().includes("poster");
 
   const handleAddToCart = () => {
-    onAddToCart({ ...product, quantity, size: isPoster ? size : undefined });
+    addToCart({ 
+      ...product, 
+      quantity, 
+      size: isPoster ? size : undefined,
+      cartId: Date.now() 
+    });
   };
 
   return (
-    <section className="product-details-section fade-in">
-      <div className="product-details-img-wrap">
-        <img src={product.image} alt={product.name} className="product-details-img-full" />
+    <section className="flex flex-row items-center justify-center gap-16 bg-transparent rounded-none py-10 px-8 max-w-6xl mx-auto my-8 shadow-none animate-fade-in">
+      <div className="flex-1 flex items-center justify-center min-w-80 max-w-130">
+        <img 
+          src={product.image} 
+          alt={product.name} 
+          className="w-full max-w-130 h-auto object-contain bg-gray-800 block mx-auto shadow-none border-6 border-gray-100 shadow-sm"
+          style={{ aspectRatio: '4/5' }}
+        />
       </div>
-      <div className="product-details-info">
-        <h2 className="product-details-title">{product.name}</h2>
-        <div className="product-details-price">₹{product.price}</div>
-        <div className="product-details-desc">{product.description}</div>
+      
+      <div className="flex-1 text-white flex flex-col gap-5 items-start justify-center min-w-80 max-w-135 w-full">
+        <h2 className="font-black text-5xl font-bold text-white mb-3 tracking-wide uppercase text-shadow-none text-left w-full">
+          {product.name}
+        </h2>
+        
+        <div className="text-xl font-bold text-white text-left w-full">
+          ₹{product.price}
+        </div>
+        
+        <div className="text-lg text-gray-300 mb-6 max-w-175 ml-0 mr-0 text-left w-full">
+          {product.description}
+        </div>
+        
         {isPoster && (
-          <div className="product-details-field">
-            <label htmlFor="size-select">Size</label>
+          <div className="mb-5 flex flex-col items-start gap-2 text-left w-full">
+            <label htmlFor="size-select" className="text-white font-medium">Size</label>
             <select
               id="size-select"
               value={size}
               onChange={e => setSize(e.target.value)}
-              className="product-details-select"
+              className="py-2 px-5 rounded-lg border-2 border-main-purple bg-gray-800 text-white text-base font-inherit mt-1"
             >
               {posterSizes.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -44,22 +76,37 @@ const ProductDetails = ({ product, onAddToCart }) => {
             </select>
           </div>
         )}
-        <div className="product-details-field">
-          <label htmlFor="quantity-input">Quantity</label>
-          <div className="product-details-qty-box">
-            <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="qty-btn">-</button>
+        
+        <div className="mb-5 flex flex-col items-start gap-2 text-left w-full">
+          <label htmlFor="quantity-input" className="text-white font-medium">Quantity</label>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setQuantity(q => Math.max(1, q - 1))} 
+              className="bg-main-purple text-white border-none rounded-lg w-9 h-9 text-lg font-bold cursor-pointer transition-colors duration-200 flex items-center justify-center hover:bg-white hover:text-main-purple"
+            >
+              -
+            </button>
             <input
               id="quantity-input"
               type="number"
               min="1"
               value={quantity}
               onChange={e => setQuantity(Math.max(1, Number(e.target.value)))}
-              className="qty-input"
+              className="w-12 text-center text-lg border-2 border-main-purple rounded-lg bg-gray-800 text-white py-1 px-1"
             />
-            <button onClick={() => setQuantity(q => q + 1)} className="qty-btn">+</button>
+            <button 
+              onClick={() => setQuantity(q => q + 1)} 
+              className="bg-main-purple text-white border-none rounded-lg w-9 h-9 text-lg font-bold cursor-pointer transition-colors duration-200 flex items-center justify-center hover:bg-white hover:text-main-purple"
+            >
+              +
+            </button>
           </div>
         </div>
-        <button className="add-cart-btn" onClick={handleAddToCart}>
+        
+        <button 
+          className="bg-accent-pink text-white border-none rounded-2xl py-3 px-8 text-lg font-bold cursor-pointer max-w-44 transition-colors duration-200 self-start hover:bg-white hover:text-accent-pink"
+          onClick={handleAddToCart}
+        >
           Add to Cart
         </button>
       </div>
@@ -67,4 +114,4 @@ const ProductDetails = ({ product, onAddToCart }) => {
   );
 };
 
-export default ProductDetails; 
+export default ProductDetails;
