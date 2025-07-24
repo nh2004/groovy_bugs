@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { productAPI } from "../services/api";
+import { productAPI } from "../services/api"; // Only productAPI needed here now
 import { useCart } from "../context/CartContext";
 import { toast } from 'react-toastify';
 import { useAuth, useClerk } from '@clerk/clerk-react';
@@ -19,6 +19,7 @@ const ProductDetails = () => {
     const [quantity, setQuantity] = useState(1);
     const [size, setSize] = useState(posterSizes[0].value);
 
+    // Destructure `addToCart` from useCart and alias it to `contextAddToCart`
     const { addToCart: contextAddToCart } = useCart();
     const { isSignedIn } = useAuth();
     const { openSignIn } = useClerk();
@@ -81,7 +82,7 @@ const ProductDetails = () => {
 
     const isPoster = product.category && product.category.toLowerCase().includes("poster");
 
-    const handleAddToCart = () => {
+    const handleAddToCart = async () => {
         if (!isSignedIn) {
             toast.warn("Please sign in or sign up to add items to your cart.", {
                 position: "top-center",
@@ -93,33 +94,48 @@ const ProductDetails = () => {
                 progress: undefined,
                 theme: "dark",
             });
-            openSignIn();
+            openSignIn(); // Opens the Clerk sign-in modal
             return;
         }
 
-        contextAddToCart({
-            _id: product._id,
-            id: product.id,
+        // Construct the item object as expected by CartContext's addToCart
+        const itemToAdd = {
+            _id: product._id || product.id, // Use _id for consistency with MongoDB IDs
             name: product.name,
             price: product.price,
             image: product.image,
-            size: isPoster ? size : undefined,
-        }, quantity); // Pass the desired quantity directly to contextAddToCart
+            // quantity: quantity, // Quantity is passed as a separate argument to contextAddToCart
+            size: isPoster ? size : undefined, // Only include size if it's a poster
+        };
 
-        // Reset the quantity to 1 after adding to cart
-        setQuantity(1);
+        try {
+            // Call the addToCart function from the CartContext
+            // This function handles updating local state, localStorage, and syncing with the API.
+            await contextAddToCart(itemToAdd, quantity);
+            console.log(quantity, "items added to cart via context");
 
-        // Optional: Show a success toast after adding to cart
-        toast.success(`Added ${quantity} x ${product.name} to cart!`, {
-            position: "top-center",
-            autoClose: 2000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-            theme: "dark",
-        });
+            // Reset the quantity to 1 after successfully adding to cart
+            setQuantity(1);
+
+            // The toast message is now handled internally by CartContext's addToCart
+            // for more consistent feedback. No need for an explicit success toast here.
+
+        } catch (err) {
+            // Error handling for the context's addToCart (e.g., if API sync fails)
+            // The context's addToCart should ideally toast its own errors.
+            console.error("Failed to add item to cart via context:", err);
+            // Fallback toast in case context doesn't handle it
+            toast.error("Failed to add product to cart. Please try again.", {
+                position: "top-center",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "dark",
+            });
+        }
     };
 
     return (
@@ -216,7 +232,7 @@ const ProductDetails = () => {
 
                         {/* Add to Cart Button */}
                         <button
-                            className="bg-main-purple text-blue-50 hover:text-black border-none rounded-2xl py-4 px-9 text-xl font-bold  cursor-pointer transition-all duration-200  hover:bg-white  hover:transform hover:scale-100 font-mono tracking-wider uppercase shadow-lg"
+                            className="bg-main-purple text-blue-50 hover:text-black border-none rounded-2xl py-4 px-9 text-xl font-bold cursor-pointer transition-all duration-200 hover:bg-white hover:transform hover:scale-100 font-mono tracking-wider uppercase shadow-lg"
                             onClick={handleAddToCart}
                         >
                             Add to Cart
