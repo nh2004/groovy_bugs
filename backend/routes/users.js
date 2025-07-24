@@ -21,14 +21,14 @@ const handleValidationErrors = (req, res, next) => {
 const authenticateToken = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
-    
+
     if (!token) {
       return res.status(401).json({ message: 'Access token required' });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId).select('-password');
-    
+
     if (!user) {
       return res.status(401).json({ message: 'Invalid token' });
     }
@@ -39,6 +39,44 @@ const authenticateToken = async (req, res, next) => {
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
 };
+
+router.post("/profile-details", async (req, res) => {
+  const { clerkId, name, gender, dob, address, preferences } = req.body;
+  try {
+    await User.updateOne(
+      { clerkId },
+      {
+        $set: { name, gender, dob, address, preferences },
+      }
+    );
+    res.status(200).json({ message: "Profile updated" });
+  } catch (err) {
+    res.status(500).json({ message: "Error updating profile" });
+  }
+});
+
+router.get('/profile-details/:clerkId', async (req, res) => {
+  const { clerkId } = req.params;
+  const user = await User.findOne({ clerkId });
+
+  if (!user) return res.status(404).json({});
+  return res.status(200).json(user);
+});
+
+
+router.post("/clerk-sync", async (req, res) => {
+  try {
+    const { clerkId, email, name, image } = req.body;
+    const existingUser = await User.findOne({ clerkId });
+    if (existingUser) return res.status(200).json(existingUser);
+
+    const newUser = new User({ clerkId, email, name, image });
+    await newUser.save();
+    res.status(201).json(newUser);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to sync user" });
+  }
+});
 
 // POST /api/users - Create user (for Clerk integration)
 router.post('/', [

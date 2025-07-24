@@ -193,7 +193,6 @@ orderSchema.pre('save', function(next) {
 
 // Indexes for better performance
 orderSchema.index({ userId: 1 });
-orderSchema.index({ orderNumber: 1 });
 orderSchema.index({ orderStatus: 1 });
 orderSchema.index({ paymentStatus: 1 });
 orderSchema.index({ createdAt: -1 });

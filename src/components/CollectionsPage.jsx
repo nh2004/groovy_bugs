@@ -4,17 +4,20 @@ import { Link } from "react-router-dom";
 const collections = [
   {
     name: "Posters",
-    image: "/images/collection-posters.jpg",
+    // Changed path to reference from the public root
+    image: "src/images/collection-posters.jpg",
     link: "/posters"
   },
   {
     name: "Merchandise",
-    image: "/images/collection-merch.jpg",
+    // Changed path to reference from the public root
+    image: "src/images/collection-merch.jpg",
     link: "/tees"
   },
   {
     name: "Tote Bags",
-    image: "/images/collection-tote.jpg",
+    // Changed path to reference from the public root
+    image: "src/images/collection-tote.jpg",
     link: "/tote-bags"
   }
 ];
@@ -28,18 +31,18 @@ const CollectionsPage = () => (
       <p className="text-xl text-gray-300 text-center mb-16 max-w-4xl mx-auto font-mono leading-relaxed">
         All our product collections featuring designs from music, philosophy, esoterica, movie-culture, memes, and much more.
       </p>
-      
+
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {collections.map(col => (
-          <Link 
-            to={col.link} 
+          <Link
+            to={col.link}
             key={col.name}
             className="group relative overflow-hidden rounded-2xl bg-gray-900 transition-all duration-300 hover:transform hover:scale-105 hover:shadow-2xl no-underline"
           >
             <div className="aspect-square overflow-hidden">
-              <img 
-                src={col.image} 
-                alt={col.name} 
+              <img
+                src={col.image} // This path will now correctly resolve if images are in /public/images
+                alt={col.name}
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
               />
             </div>

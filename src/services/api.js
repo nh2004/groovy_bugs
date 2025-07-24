@@ -31,9 +31,10 @@ export const productAPI = {
   },
   
   getByCategory: async (category) => {
-    const response = await api.get(`/products/category/${category}`);
-    return response.data;
-  },
+  console.log("Fetching category:", category); // debug log
+  const response = await api.get(`/products/category/${category}`);
+  return response.data;
+},
   
   getFeatured: async () => {
     const response = await api.get('/products/featured');
@@ -112,19 +113,46 @@ export const orderAPI = {
 };
 
 // Users API
+// api.jsx
+
+// Assuming 'api' is your Axios instance already configured (e.g., with a base URL)
+// import axios from 'axios';
+// const api = axios.create({ baseURL: '/api' }); // Example setup
+
 export const userAPI = {
   create: async (userData) => {
     const response = await api.post('/users', userData);
     return response.data;
   },
-  
+
   getById: async (userId) => {
     const response = await api.get(`/users/${userId}`);
     return response.data;
   },
-  
+
   update: async (userId, userData) => {
     const response = await api.put(`/users/${userId}`, userData);
+    return response.data;
+  },
+
+  // --- Additional User API Calls ---
+
+  // Get all users
+  getAll: async () => {
+    const response = await api.get('/users');
+    return response.data;
+  },
+
+  // Delete a user by ID
+  delete: async (userId) => {
+    const response = await api.delete(`/users/${userId}`);
+    return response.data; // Often returns a success message or confirmation
+  },
+
+  // Save/Complete user profile details (as used in CompleteProfile component)
+  // This typically sends clerkId along with other form data
+  completeProfile: async (profileData) => {
+    const response = await api.post('/users/profile-details', profileData);
     return response.data;
   }
 };

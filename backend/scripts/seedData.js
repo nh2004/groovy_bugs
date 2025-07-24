@@ -351,7 +351,7 @@ const allProducts = [...products, ...extraPosters];
 async function seedDatabase() {
   try {
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/groovybugs');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://nilasishhalderofficial:Nilasish-2004@cluster0.tpwwczl.mongodb.net/');
     console.log('Connected to MongoDB');
 
     // Clear existing products

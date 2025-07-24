@@ -171,8 +171,6 @@ userSchema.virtual('fullName').get(function() {
 });
 
 // Indexes for better performance
-userSchema.index({ clerkId: 1 });
-userSchema.index({ email: 1 });
 userSchema.index({ 'addresses.isDefault': 1 });
 
 export default mongoose.model('User', userSchema);

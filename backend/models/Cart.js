@@ -36,7 +36,7 @@ const cartSchema = new mongoose.Schema({
   userId: {
     type: String, // Clerk user ID
     required: true,
-    unique: true
+
   },
   items: [cartItemSchema],
   totalAmount: {
@@ -83,7 +83,7 @@ cartSchema.pre('save', function(next) {
 });
 
 // Index for faster queries
-cartSchema.index({ userId: 1 });
+cartSchema.index({ userId: 1 }, { unique: true });
 cartSchema.index({ 'items.product': 1 });
 
 export default mongoose.model('Cart', cartSchema);

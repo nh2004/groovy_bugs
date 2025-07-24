@@ -1,106 +1,137 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth, UserButton, SignInButton } from "@clerk/clerk-react";
-import { useCart } from "../context/CartContext";
+import { Menu, X, Search, ShoppingCart, User } from "lucide-react";
 
-const Navbar = () => {
+const Navbar = ({ cartCount, onCartClick }) => {
   const { isSignedIn } = useAuth();
-  const { getCartCount, toggleCart } = useCart();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const navLinks = [
+    { href: "/", label: "HOME" },
+    { href: "/tees", label: "TEES" },
+    { href: "/tote-bags", label: "TOTE BAGS" },
+    { href: "/posters", label: "POSTERS" },
+    { href: "/shop", label: "SHOP ALL" },
+    { href: "/contact", label: "CONTACT US" },
+    { href: "/track", label: "TRACK ORDER" },
+  ];
 
   return (
     <>
-      <div className="w-full h-1 bg-main-purple fixed top-0 left-0 z-50"></div>
-      <nav className="flex items-center justify-between bg-black px-10 py-3 min-h-14 sticky top-0 z-40 shadow-lg border-none">
-        <div className="flex items-center">
-          <img
-            src="/images/logo.jpg"
-            alt="Groovy Bugs Logo"
-            className="h-15 w-15 object-contain mr-10"
-          />
-        </div>
-        
-        <ul className="flex flex-1 justify-center gap-9 list-none m-0 p-0">
-          <li>
-            <Link to="/" className="text-white font-mono text-base font-bold uppercase tracking-wider no-underline transition-all duration-200 py-1 px-2 border-b-2 border-transparent hover:text-main-purple hover:border-main-purple">
-              HOME
-            </Link>
-          </li>
-          <li>
-            <Link to="/tees" className="text-white font-mono text-base font-bold uppercase tracking-wider no-underline transition-all duration-200 py-1 px-2 border-b-2 border-transparent hover:text-main-purple hover:border-main-purple">
-              TEES
-            </Link>
-          </li>
-          <li>
-            <Link to="/tote-bags" className="text-white font-mono text-base font-bold uppercase tracking-wider no-underline transition-all duration-200 py-1 px-2 border-b-2 border-transparent hover:text-main-purple hover:border-main-purple">
-              TOTE BAGS
-            </Link>
-          </li>
-          <li>
-            <Link to="/posters" className="text-white font-mono text-base font-bold uppercase tracking-wider no-underline transition-all duration-200 py-1 px-2 border-b-2 border-transparent hover:text-main-purple hover:border-main-purple">
-              POSTERS
-            </Link>
-          </li>
-          <li>
-            <Link to="/shop" className="text-white font-mono text-base font-bold uppercase tracking-wider no-underline transition-all duration-200 py-1 px-2 border-b-2 border-transparent hover:text-main-purple hover:border-main-purple">
-              SHOP ALL
-            </Link>
-          </li>
-          <li>
-            <a href="/contact" className="text-white font-mono text-base font-bold uppercase tracking-wider no-underline transition-all duration-200 py-1 px-2 border-b-2 border-transparent hover:text-main-purple hover:border-main-purple">
-              CONTACT US
-            </a>
-          </li>
-          <li>
-            <a href="/track" className="text-white font-mono text-base font-bold uppercase tracking-wider no-underline transition-all duration-200 py-1 px-2 border-b-2 border-transparent hover:text-main-purple hover:border-main-purple">
-              TRACK ORDER
-            </a>
-          </li>
-        </ul>
-        
-        <div className="flex items-center gap-5 ml-10">
-          <a href="#" aria-label="Search">
-            <img
-              src="/images/icons/magnifying-glass.jpg"
-              alt="Search Icon"
-              className="h-6 w-6 object-contain"
-            />
-          </a>
-          
-          {isSignedIn ? (
-            <div className="flex items-center justify-center">
-              <Link to="/profile" aria-label="Profile" className="flex items-center justify-center no-underline">
-                <UserButton afterSignOutUrl="/" />
+      {/* Top line */}
+      <div className="w-full h-1 bg-groovy-purple fixed top-0 left-0 z-50"></div>
+
+      {/* Main navbar */}
+      <nav className="bg-black sticky top-0 z-40 border-b border-gray-800 navbar-shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center h-16 sm:h-20">
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              <Link to="/" className="flex items-center">
+                <img
+                  src="/images/logo.jpg"
+                  alt="Groovy Bugs Logo"
+                  className="h-10 w-10 sm:h-12 sm:w-12 object-contain"
+                />
               </Link>
             </div>
-          ) : (
-            <SignInButton mode="modal">
-              <button className="bg-transparent border-none p-0 cursor-pointer flex items-center justify-center">
-                <img
-                  src="/images/icons/user.jpg"
-                  alt="User Icon"
-                  className="h-6 w-6 object-contain"
-                />
+
+            {/* Desktop Navigation */}
+            <div className="hidden lg:block flex-1 mx-8">
+              <div className="flex items-center justify-center space-x-6 xl:space-x-8">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    className="text-white font-mono text-sm font-bold uppercase tracking-wider hover:text-groovy-purple transition-colors duration-200 border-b-2 border-transparent hover:border-groovy-purple py-1"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Right side icons */}
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              {/* Search Icon - Hidden on mobile */}
+              <button className="hidden sm:block text-white hover:text-groovy-purple transition-colors duration-200">
+                <Search className="h-5 w-5" />
               </button>
-            </SignInButton>
-          )}
-          
-          <button
-            onClick={toggleCart}
-            className="bg-transparent border-none p-0 cursor-pointer relative flex items-center justify-center"
-            aria-label="Cart"
-          >
-            <img
-              src="/images/icons/cart.jpg"
-              alt="Cart Icon"
-              className="h-6 w-6 object-contain"
-            />
-            {getCartCount() > 0 && (
-              <span className="bg-main-purple text-white rounded-full px-2 py-1 text-xs font-bold ml-1">
-                {getCartCount()}
-              </span>
-            )}
-          </button>
+
+              {/* User Authentication */}
+              {isSignedIn ? (
+                <Link
+                  to="/profile"
+                  className="flex items-center justify-center"
+                >
+                  <UserButton afterSignOutUrl="/" />
+                </Link>
+              ) : (
+                <SignInButton mode="modal">
+                  <button className="text-white hover:text-groovy-purple transition-colors duration-200">
+                    <User className="h-5 w-5" />
+                  </button>
+                </SignInButton>
+              )}
+
+              {/* Cart */}
+              <button
+                onClick={onCartClick}
+                className="relative text-white hover:text-groovy-purple transition-colors duration-200"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-groovy-purple text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Mobile menu button */}
+              <button
+                onClick={toggleMobileMenu}
+                className="lg:hidden text-white hover:text-groovy-purple transition-colors duration-200"
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </button>
+            </div>
+          </div>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden bg-black border-t border-gray-800 animate-slide-up">
+            <div className="px-4 py-4 space-y-3">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className="block text-white font-mono text-sm font-bold uppercase tracking-wider hover:text-groovy-purple transition-colors duration-200 py-2 border-b border-gray-800 last:border-b-0"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+
+              {/* Mobile Search */}
+              <button className="flex items-center space-x-2 text-white hover:text-groovy-purple transition-colors duration-200 py-2 w-full">
+                <Search className="h-5 w-5" />
+                <span className="font-mono text-sm font-bold uppercase tracking-wider">
+                  Search
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
     </>
   );

@@ -110,45 +110,18 @@ router.get('/featured', async (req, res) => {
 });
 
 // GET /api/products/category/:category - Get products by category
-router.get('/category/:category', [
-  param('category').isString().trim().notEmpty(),
-  query('page').optional().isInt({ min: 1 }),
-  query('limit').optional().isInt({ min: 1, max: 50 })
-], handleValidationErrors, async (req, res) => {
-  try {
-    const { category } = req.params;
-    const { page = 1, limit = 20 } = req.query;
-    
-    const filter = { 
-      category: new RegExp(category, 'i'), 
-      inStock: true 
-    };
-    
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    const [products, total] = await Promise.all([
-      Product.find(filter)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(parseInt(limit))
-        .select('-reviews'),
-      Product.countDocuments(filter)
-    ]);
+router.get('/category/:category', async (req, res) => {
+  const category = req.params.category;
 
-    res.json({
-      products,
-      category,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(total / parseInt(limit)),
-        totalProducts: total
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching products by category:', error);
-    res.status(500).json({ message: 'Error fetching products by category', error: error.message });
+  try {
+    const products = await Product.find({ category }); // Make sure category field exists and is indexed
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch products by category' });
   }
 });
+
+
 
 // GET /api/products/:id - Get single product by ID
 router.get('/:id', [

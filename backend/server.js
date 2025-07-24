@@ -10,6 +10,7 @@ import productRoutes from './routes/products.js';
 import cartRoutes from './routes/cart.js';
 import orderRoutes from './routes/orders.js';
 import userRoutes from './routes/users.js';
+
 import authRoutes from './routes/auth.js';
 
 // Load environment variables
@@ -36,7 +37,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/groovybugs', {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://nilasishhalderofficial:Nilasish-2004@cluster0.tpwwczl.mongodb.net/', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })

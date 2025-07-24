@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import ProductList from "./ProductList";
-import "../styles/ShopPage.css";
+// import "../styles/ShopPage.css";
 
 const categories = ["All", "Tees", "Posters", "Tote Bags"];
 
