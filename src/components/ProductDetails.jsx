@@ -216,7 +216,7 @@ const ProductDetails = () => {
 
                         {/* Add to Cart Button */}
                         <button
-                            className="bg-accent-pink text-white border-none rounded-2xl py-4 px-12 text-xl font-bold cursor-pointer transition-all duration-200 hover:bg-pink-600 hover:transform hover:scale-105 font-mono tracking-wider uppercase shadow-lg"
+                            className="bg-main-purple text-blue-50 hover:text-black border-none rounded-2xl py-4 px-9 text-xl font-bold  cursor-pointer transition-all duration-200  hover:bg-white  hover:transform hover:scale-100 font-mono tracking-wider uppercase shadow-lg"
                             onClick={handleAddToCart}
                         >
                             Add to Cart
@@ -230,7 +230,7 @@ const ProductDetails = () => {
                             </div>
                             <div className="text-center p-4 bg-gray-900 rounded-lg">
                                 <h4 className="font-bold text-white mb-2 font-mono">Premium Quality</h4>
-                                <p className="text-sm text-gray-400 font-mono">300gsm matte finish</p>
+                                <p className="text-sm text-gray-400 font-mono">220 gsm matte finish</p>
                             </div>
                         </div>
                     </div>
