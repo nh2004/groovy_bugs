@@ -11,10 +11,12 @@ const ClerkSync = () => {
       const syncUser = async () => {
         try {
           await axios.post("http://localhost:5000/api/users/clerk-sync", {
-            clerkId: user.id, // CHANGED THIS FROM userId to clerkId
-            name: user.fullName,
+            clerkId: user.id, // CHANGED THIS FROM userId to clerkId
+            image: user.imageUrl,
+            firstName: user.firstName,
+            lastName: user.lastName,
             email: user.emailAddresses[0]?.emailAddress,
-            image: user.imageUrl,
+            
           });
           console.log("User synced successfully with backend."); // Add a success log
         } catch (error) {

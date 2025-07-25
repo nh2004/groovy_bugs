@@ -9,9 +9,9 @@ const router = express.Router();
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      message: 'Validation failed', 
-      errors: errors.array() 
+    return res.status(400).json({
+      message: 'Validation failed',
+      errors: errors.array()
     });
   }
   next();
@@ -35,11 +35,11 @@ const authenticateToken = async (req, res, next) => {
 // ----- COMPLETE PROFILE ROUTE -----
 router.post("/profile-details", [
   body('clerkId').notEmpty().withMessage('Clerk ID is required'),
+  body('email').isEmail().withMessage('Valid email is required'),
   body('firstName').notEmpty().withMessage('First name is required'),
   body('lastName').notEmpty().withMessage('Last name is required'),
   body('gender').notEmpty().isIn(['male', 'female', 'other', 'prefer_not_to_say']).withMessage('Valid gender required'),
   body('dateOfBirth').notEmpty().isISO8601().withMessage('Valid date of birth required'),
-  // Accept 'address' as a full single address object
   body('address').isObject().withMessage('Address is required'),
   body('address.fullName').notEmpty(),
   body('address.addressLine1').notEmpty(),
@@ -48,15 +48,15 @@ router.post("/profile-details", [
   body('address.postalCode').notEmpty(),
   body('address.country').notEmpty(),
   body('address.phone').notEmpty(),
-  // Optionally: validate preferences.favoriteCategories as array
   handleValidationErrors
 ], async (req, res) => {
-  const { clerkId, firstName, lastName, gender, dateOfBirth, preferences, address } = req.body;
+  const { clerkId, email, firstName, lastName, gender, dateOfBirth, preferences, address } = req.body;
   try {
     await User.updateOne(
       { clerkId },
       {
         $set: {
+          email,
           firstName,
           lastName,
           gender,
@@ -85,6 +85,10 @@ router.get('/profile-details/:clerkId', async (req, res) => {
 router.post("/clerk-sync", [
   body('clerkId').notEmpty().withMessage('Clerk ID is required'),
   body('email').isEmail().withMessage('Valid email is required'),
+  body('firstName').notEmpty().withMessage('First name is required'),
+  body('lastName').notEmpty().withMessage('Last name is required'),
+  body('image').optional().isURL().withMessage('Valid image URL is required')
+
 ], handleValidationErrors, async (req, res) => {
   try {
     const { clerkId, email, firstName, lastName, image } = req.body;
@@ -104,7 +108,9 @@ router.post('/', [
   body('clerkId').notEmpty().withMessage('Clerk ID is required'),
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
   body('firstName').trim().isLength({ min: 1 }).withMessage('First name is required'),
-  body('lastName').trim().isLength({ min: 1 }).withMessage('Last name is required')
+  body('lastName').trim().isLength({ min: 1 }).withMessage('Last name is required'),
+  body('phone').optional().isMobilePhone().withMessage('Valid phone number is required'),
+  body('dateOfBirth').optional().isISO8601().withMessage('Valid date is required'),
 ], handleValidationErrors, async (req, res) => {
   try {
     const { clerkId, email, firstName, lastName, phone, dateOfBirth, gender } = req.body;
