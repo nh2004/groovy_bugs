@@ -122,6 +122,10 @@ export const orderAPI = {
 
 // Users API (no changes needed here)
 export const userAPI = {
+  getProfileDetails: async (clerkId) => {
+    const response = await api.get(`/users/profile-details/${clerkId}`);
+    return response.data;
+  },
   create: async (userData) => {
     const response = await api.post('/users', userData);
     return response.data;

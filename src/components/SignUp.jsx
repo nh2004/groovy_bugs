@@ -3,6 +3,7 @@ import { SignUp as ClerkSignUp, useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import useClerkSync from "../Utils/ClerkSync";
 import CompleteProfile from "../components/CompleteProfile"; // 🧩 Modal form
+import userAPI from "../services/api"; // 🧩 API service for user profile
 
 const SignUp = () => {
   const { isSignedIn } = useUser();
@@ -11,10 +12,55 @@ const SignUp = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isSignedIn) {
-      syncUser().then(() => setShowModal(true));
-    }
-  }, [isSignedIn]);
+  let cancelled = false;
+
+  const isAddressComplete = addr =>
+    !!addr &&
+    addr.fullName &&
+    addr.addressLine1 &&
+    addr.city &&
+    addr.state &&
+    addr.postalCode &&
+    addr.country &&
+    addr.phone;
+
+  if (isSignedIn && user) {
+    (async () => {
+      await syncUser();
+      try {
+        const profile = await userAPI.getProfileDetails(user.id);
+        const hasValidAddress =
+          Array.isArray(profile.addresses) &&
+          profile.addresses.length > 0 &&
+          isAddressComplete(profile.addresses[0]);
+
+        if (
+          !profile.firstName ||
+          !profile.lastName ||
+          !profile.email ||
+          !profile.gender ||
+          !profile.dateOfBirth ||
+          !hasValidAddress ||
+          !profile.preferences ||
+          !Array.isArray(profile.preferences.favoriteCategories) ||
+          profile.preferences.favoriteCategories.length === 0
+        ) {
+          if (!cancelled) setShowModal(true);
+        } else {
+          if (!cancelled) setShowModal(false);
+        }
+      } catch (e) {
+        if (!cancelled) setShowModal(true);
+      }
+      setProfileChecked(true);
+    })();
+  } else {
+    setProfileChecked(false);
+    setShowModal(false);
+  }
+
+  return () => { cancelled = true; };
+}, [isSignedIn, user, syncUser]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">

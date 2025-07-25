@@ -39,11 +39,9 @@ router.post('/', [
       userEmail,
       items,
       shippingAddress,
-      billingAddress,
       paymentMethod,
       paymentId,
       specialInstructions,
-      discountCode
     } = req.body;
 
     // Validate products exist and calculate totals
@@ -74,37 +72,32 @@ router.post('/', [
     });
 
     // Calculate shipping (free over ₹1500)
-    const shippingCost = subtotal >= 1500 ? 0 : 100;
+    // const shippingCost = subtotal >= 1500 ? 0 : 100;
     
     // Calculate tax (18% GST)
-    const tax = Math.round(subtotal * 0.18);
+    // const tax = Math.round(subtotal * 0.18);
     
     // Apply discount
-    let discountAmount = 0;
-    if (discountCode) {
-      if (discountCode.toLowerCase() === 'groovy20') {
-        discountAmount = Math.round(subtotal * 0.2);
-      } else if (discountCode.toLowerCase() === 'welcome10') {
-        discountAmount = Math.round(subtotal * 0.1);
-      }
-    }
+    // let discountAmount = 0;
+    // if (discountCode) {
+    //   if (discountCode.toLowerCase() === 'groovy20') {
+    //     discountAmount = Math.round(subtotal * 0.2);
+    //   } else if (discountCode.toLowerCase() === 'welcome10') {
+    //     discountAmount = Math.round(subtotal * 0.1);
+    //   }
+    // }
 
-    const totalAmount = subtotal + shippingCost + tax - discountAmount;
+    const totalAmount = subtotal; //tax, //shippingCost, //discountAmount will be taken care of later
 
     // Create order
     const order = new Order({
+      orderNumber: `ORD-${Date.now()}`, // Unique order number
       userId,
       userEmail,
       items: orderItems,
       shippingAddress,
-      billingAddress: billingAddress || shippingAddress,
+      billingAddress: shippingAddress,
       subtotal,
-      shippingCost,
-      tax,
-      discount: discountCode ? {
-        code: discountCode,
-        amount: discountAmount
-      } : undefined,
       totalAmount,
       paymentMethod,
       paymentId,
@@ -112,12 +105,14 @@ router.post('/', [
     });
 
     await order.save();
-
+   
     // Clear user's cart after successful order
-    await Cart.findOneAndUpdate(
-      { userId },
-      { $set: { items: [] } }
-    );
+    // await Cart.findOneAndUpdate(
+    //   { userId },
+    //   { $set: { items: [] } }
+    // );
+
+    // ***** since its in tsting mode, we won't clear the cart
 
     // Update user's order count and total spent
     await User.findOneAndUpdate(

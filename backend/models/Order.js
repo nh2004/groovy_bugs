@@ -32,7 +32,6 @@ const orderItemSchema = new mongoose.Schema({
   },
   totalPrice: {
     type: Number,
-    required: true,
     min: [0, 'Total price cannot be negative']
   }
 });
@@ -137,14 +136,12 @@ const orderSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    required: true,
     enum: ['pending', 'paid', 'failed', 'refunded', 'partially_refunded'],
     default: 'pending'
   },
   paymentId: String,
   orderStatus: {
     type: String,
-    required: true,
     enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'],
     default: 'pending'
   },

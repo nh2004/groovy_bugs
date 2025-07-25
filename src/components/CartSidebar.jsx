@@ -4,7 +4,9 @@ import { Link } from "react-router-dom";
 import { toast } from 'react-toastify';
 import { useAuth } from '@clerk/clerk-react';
 import { cartAPI } from "../services/api";
-
+import emailjs from '@emailjs/browser';
+import { useUser } from "@clerk/clerk-react";
+import { orderAPI } from "../services/api"; // <-- Import your orderAPI module!
 const CartSidebar = ({ isOpen, onClose }) => {
     const { isSignedIn, userId } = useAuth();
     const {
@@ -17,10 +19,16 @@ const CartSidebar = ({ isOpen, onClose }) => {
     // State for special instructions
     const [specialInstructions, setSpecialInstructions] = useState("");
     const [showInstructions, setShowInstructions] = useState(false);
-
+    const [emailSuccess, setEmailSuccess] = useState(false);
+    const [orderError, setOrderError] = useState('');
     // State for discount code
     const [discountCodeInput, setDiscountCodeInput] = useState("");
     const [appliedDiscount, setAppliedDiscount] = useState(null);
+
+    //keys for email sending 
+    const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+    const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+    const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
     // State for shipping address
     const [shippingAddressForm, setShippingAddressForm] = useState({
@@ -119,7 +127,12 @@ const CartSidebar = ({ isOpen, onClose }) => {
     /**
      * Handles the checkout process.
      */
-    const handleCheckout = () => {
+    const { user } = useUser();
+
+    const handleCheckout = async () => {
+        setOrderError('');
+        setEmailSuccess(false);
+
         if (!isAddressSaved) {
             toast.error("Please add and save your shipping address before checking out.", { theme: "dark" });
             return;
@@ -128,14 +141,93 @@ const CartSidebar = ({ isOpen, onClose }) => {
             toast.error("Your cart is empty. Add items before checking out.", { theme: "dark" });
             return;
         }
-        console.log("Proceeding to checkout with:", {
-            items: groupedItems,
-            total: total,
-            instructions: specialInstructions,
-            address: shippingAddressForm,
-            discount: appliedDiscount
-        });
-        toast.success("Proceeding to checkout!", { theme: "dark" });
+
+        // Clerk user info
+        const userName = user?.fullName || [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Unknown";
+        const userEmail = user?.primaryEmailAddress?.emailAddress || user?.email || "";
+        const userPhone = user?.phoneNumbers && user.phoneNumbers.length > 0 ? user.phoneNumbers[0]?.phoneNumber : "";
+
+        // Prepare order items for API
+        const orderItems = groupedItems.map(item => ({
+            product: item.product,
+            name: item.name,
+            image: item.image,
+            quantity: item.quantity,
+            size: item.size,
+            customization: item.customization,
+            price: item.price,
+            // API will handle totalPrice
+        }));
+
+        // Shipping address shape for order API — mapping from your form
+        const shippingAddress = {
+            fullName: userName,
+            addressLine1: shippingAddressForm.street || shippingAddressForm.addressLine1 || "",
+            addressLine2: shippingAddressForm.apartment || shippingAddressForm.addressLine2 || "",
+            city: shippingAddressForm.city,
+            state: shippingAddressForm.state,
+            postalCode: shippingAddressForm.postalCode,
+            country: shippingAddressForm.country,
+            phone: userPhone || shippingAddressForm.phone || "",
+        };
+
+        // Payment integration: here, you can collect a 'paymentMethod' (for now, set to 'cod' or whatever matches your allowed enums)
+        const paymentMethod = "cod";
+        const paymentId = ""; // or stripe/razorpay ID if paid
+
+        // Assemble final order data
+        const orderData = {
+            userId: user.id,
+            userEmail,
+            items: orderItems,
+            shippingAddress,
+            paymentMethod,
+            paymentId, // empty/not used for COD
+            specialInstructions,
+            // Feel free to attach more fields: billingAddress, etc.
+        };
+
+        try {
+            // 1. Create Order in the DB
+            const response = await orderAPI.create(orderData);
+            if (!response.order) throw new Error("Order not created. Please try again.");
+
+            // 2. EmailJS notification
+            const itemsText = orderItems
+                .map(item => `${item.name} (Size: ${item.size || '-'}): ${item.quantity} x ₹${item.price.toFixed(2)}`)
+                .join('\n');
+            const addressText = [
+                shippingAddress.addressLine1,
+                shippingAddress.addressLine2,
+                shippingAddress.city,
+                shippingAddress.state,
+                shippingAddress.postalCode,
+                shippingAddress.country
+            ].filter(Boolean).join(", ");
+
+            const emailVars = {
+                user_name: userName,
+                user_email: userEmail,
+                user_phone: userPhone,
+                shipping_address: addressText,
+                items: itemsText,
+                order_total: total.toFixed(2),
+                order_number: response.order.orderNumber, // use order from API response!
+                special_instructions: specialInstructions || '(none)',
+            };
+
+            await emailjs.send(
+                serviceId,
+                templateId,
+                emailVars,
+                publicKey
+            );
+            setEmailSuccess(true);
+            toast.success("Thank you for your order! An email confirmation has been sent.", { position: "top-center" });
+        } catch (err) {
+            setOrderError(err.message || "There was a problem during checkout.");
+            toast.error(err.message || "Checkout failed!", { position: "top-center" });
+        }
     };
     const handleCustomisation = async () => {
         if (!specialInstructions.trim()) {
@@ -240,14 +332,14 @@ const CartSidebar = ({ isOpen, onClose }) => {
                                 )}
                             </div>
 
-                            {/* Discount Code */}
+                            {/* Discount Code
                             <div className="mb-4">
                                 <div className="flex gap-2">
                                     <input type="text" placeholder="Apply Discount Code" value={discountCodeInput} onChange={(e) => setDiscountCodeInput(e.target.value)} className={`${formInputClass} p-3`} />
                                     <button className="bg-main-purple text-white border-none rounded px-4 text-sm cursor-pointer hover:bg-purple-600 transition-colors font-mono font-bold" onClick={handleApplyDiscount}>Apply</button>
                                 </div>
                                 {appliedDiscount && <p className="mt-2 text-sm text-accent-pink font-mono">Discount '{appliedDiscount.code}' applied ({appliedDiscount.percentage}% off)!</p>}
-                            </div>
+                            </div> */}
 
                             {/* Shipping Address */}
                             <div className="mb-4 border-t border-gray-700 pt-4">
@@ -311,6 +403,20 @@ const CartSidebar = ({ isOpen, onClose }) => {
                                     </>
                                 )}
                             </div>
+                            {/* Email Confirmation Message */}
+                            {emailSuccess && (
+                                <div className="mb-4 bg-green-100 border border-green-400 text-green-900 px-4 py-2 rounded text-center font-mono">
+                                    <strong>Thanks for your order with Groovy Bugs!</strong><br />
+                                    We've received your order. An email confirmation is on the way.<br />
+                                    Our team will process your order soon. <br classesName="hidden sm:block" />
+                                    You’ll receive updates by email. Thanks for being a valued Groovy Bugs customer!
+                                </div>
+                            )}
+                            {orderError && (
+                                <div className="mb-4 bg-red-100 border border-red-400 text-red-900 px-4 py-2 rounded text-center font-mono">
+                                    {orderError}
+                                </div>
+                            )}
 
                             {/* Cart Summary Totals */}
                             <div className="mb-4 space-y-3">
@@ -326,7 +432,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
                                 )}
                                 <div className="flex justify-between text-sm text-gray-300 font-mono">
                                     <span>Shipping</span>
-                                    <span>FREE</span>
+                                    <span>Can Vary</span>
                                 </div>
                                 <div className="flex justify-between text-lg font-bold text-white border-t border-gray-600 pt-3 mt-2 font-mono">
                                     <span>Total</span>
@@ -338,8 +444,8 @@ const CartSidebar = ({ isOpen, onClose }) => {
                             <div className="flex flex-col gap-3 mb-4">
                                 <button
                                     className={`text-white border-none rounded-lg py-3 text-base font-bold cursor-pointer text-center transition-colors font-mono tracking-wider ${isAddressSaved && groupedItems.length > 0
-                                            ? "bg-main-purple hover:bg-purple-600"
-                                            : "bg-gray-600 cursor-not-allowed opacity-60"
+                                        ? "bg-main-purple hover:bg-purple-600"
+                                        : "bg-gray-600 cursor-not-allowed opacity-60"
                                         }`}
                                     onClick={handleCheckout}
                                     disabled={!isAddressSaved || groupedItems.length === 0}
@@ -358,7 +464,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
                             {/* Payment Info Footer */}
                             <div className="text-center">
                                 <p className="m-0 text-xs text-gray-400 font-mono">
-                                    Secure checkout powered by Stripe
+                                    Orders Will be confirmed via email and payment will be processed securely.
                                 </p>
                             </div>
                         </div>

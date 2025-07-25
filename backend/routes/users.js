@@ -75,10 +75,19 @@ router.post("/profile-details", [
 
 router.get('/profile-details/:clerkId', async (req, res) => {
   const { clerkId } = req.params;
-  const user = await User.findOne({ clerkId })
-    .select('-password');
-  if (!user) return res.status(404).json({});
-  return res.status(200).json(user);
+  try {
+    const user = await User.findOne({ clerkId })
+      .select('firstName lastName email gender dateOfBirth addresses preferences');
+    if (!user) {
+      return res.status(404).json({ message: "User not found", user: null });
+    }
+    return res.status(200).json(user);
+  } catch (err) {
+    return res.status(500).json({
+      message: "Error fetching profile",
+      error: err.message
+    });
+  }
 });
 
 // ----- CLERK SYNC ROUTE -----
