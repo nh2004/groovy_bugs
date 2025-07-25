@@ -1,212 +1,330 @@
 import React, { useState, useEffect } from "react";
 import { useCart } from "../context/CartContext";
-import { Link } from "react-router-dom"; // Import Link for 'View Full Cart' button
-import { toast } from 'react-toastify'; // Import toast for better feedback
+import { Link } from "react-router-dom";
+import { toast } from 'react-toastify';
+import { useAuth } from '@clerk/clerk-react';
+import { cartAPI } from "../services/api";
 
-// CartSidebar component now accepts isOpen and onClose as props
 const CartSidebar = ({ isOpen, onClose }) => {
+    const { isSignedIn, userId } = useAuth();
     const {
         removeFromCart,
         updateQuantity,
-        getGroupedCart, // Use this for displaying cart items
+        getGroupedCart,
         getCartTotal,
     } = useCart();
 
+    // State for special instructions
     const [specialInstructions, setSpecialInstructions] = useState("");
     const [showInstructions, setShowInstructions] = useState(false);
-    const [discountCode, setDiscountCode] = useState("");
+
+    // State for discount code
+    const [discountCodeInput, setDiscountCodeInput] = useState("");
     const [appliedDiscount, setAppliedDiscount] = useState(null);
 
-    // `groupedItems` will now have `_id` and `id` aliased from `item.product`
-    // due to the `getGroupedCart` transformation in CartContext.
-    // So, `item.product` and `item.size` are the correct identifiers for context functions.
+    // State for shipping address
+    const [shippingAddressForm, setShippingAddressForm] = useState({
+        street: "",
+        apartment: "",
+        city: "",
+        state: "",
+        postalCode: "",
+        country: "India",
+        landmark: ""
+    });
+    const [showAddressForm, setShowAddressForm] = useState(false);
+    const [isAddressSaved, setIsAddressSaved] = useState(false);
+
     const groupedItems = getGroupedCart();
     const subtotal = getCartTotal();
+    const total = appliedDiscount ? subtotal - appliedDiscount.amount : subtotal;
 
-    const applyDiscount = () => {
+    /**
+     * Effect to check if an address is already populated.
+     * In a real app, you might fetch a user's default address here.
+     */
+    useEffect(() => {
+        const addressComplete =
+            shippingAddressForm.street &&
+            shippingAddressForm.city &&
+            shippingAddressForm.state &&
+            shippingAddressForm.postalCode;
+        setIsAddressSaved(addressComplete);
+    }, [shippingAddressForm]);
+
+    /**
+     * Handles applying a discount code.
+     */
+    const handleApplyDiscount = () => {
         let discountAmount = 0;
         let percentage = 0;
         let message = "";
 
-        if (discountCode.toLowerCase() === "groovy20") {
+        if (discountCodeInput.toLowerCase() === "groovy20") {
             percentage = 20;
             discountAmount = subtotal * 0.2;
             message = "Discount 'GROOVY20' applied!";
-        } else if (discountCode.toLowerCase() === "welcome10") {
+        } else if (discountCodeInput.toLowerCase() === "welcome10") {
             percentage = 10;
             discountAmount = subtotal * 0.1;
             message = "Discount 'WELCOME10' applied!";
         } else {
             setAppliedDiscount(null);
             toast.error("Invalid discount code", { theme: "dark" });
-            setDiscountCode("");
-            return; // Exit early
+            setDiscountCodeInput("");
+            return;
         }
 
         setAppliedDiscount({
-            code: discountCode,
+            code: discountCodeInput,
             percentage: percentage,
             amount: discountAmount,
         });
         toast.success(message, { theme: "dark" });
-        setDiscountCode("");
+        setDiscountCodeInput("");
     };
 
-    const total = appliedDiscount ? subtotal - appliedDiscount.amount : subtotal;
+    /**
+     * Updates the shipping address form state on input change.
+     */
+    const handleAddressChange = (e) => {
+        const { name, value } = e.target;
+        setShippingAddressForm(prev => ({ ...prev, [name]: value }));
+    };
 
-    // Use the isOpen prop for the main overlay and sidebar container
+    /**
+     * Handles saving the shipping address.
+     */
+    const handleSaveAddress = async (e) => {
+        e.preventDefault();
+        if (!shippingAddressForm.street || !shippingAddressForm.city || !shippingAddressForm.state || !shippingAddressForm.postalCode) {
+            toast.error("Please fill in all required address fields.", { theme: "dark" });
+            return;
+        }
+        try {
+            const response = await cartAPI.updateCartDetails(userId, { shippingAddress: shippingAddressForm });
+            if (response.success) {
+                toast.success("Address saved successfully!", { theme: "dark" });
+                setIsAddressSaved(true);
+                setShowAddressForm(false);   // ONLY CLOSE FORM HERE!
+            } else {
+                toast.error(response.message || "Failed to save address.", { theme: "dark" });
+            }
+        } catch (error) {
+            console.error("Error saving address:", error);
+            toast.error("An error occurred while saving the address.", { theme: "dark" });
+        }
+    };
+
+    /**
+     * Handles the checkout process.
+     */
+    const handleCheckout = () => {
+        if (!isAddressSaved) {
+            toast.error("Please add and save your shipping address before checking out.", { theme: "dark" });
+            return;
+        }
+        if (groupedItems.length === 0) {
+            toast.error("Your cart is empty. Add items before checking out.", { theme: "dark" });
+            return;
+        }
+        console.log("Proceeding to checkout with:", {
+            items: groupedItems,
+            total: total,
+            instructions: specialInstructions,
+            address: shippingAddressForm,
+            discount: appliedDiscount
+        });
+        toast.success("Proceeding to checkout!", { theme: "dark" });
+    };
+    const handleCustomisation = async () => {
+        if (!specialInstructions.trim()) {
+            toast.error("Please enter some instructions, or cancel.", { theme: "dark" });
+            return;
+        }
+
+        try {
+            const response = await cartAPI.updateCartDetails(userId, { specialInstructions: specialInstructions });
+
+            if (response.success) {
+                toast.success("Instructions added successfully!", { theme: "dark" });
+                setShowInstructions(false);
+            } else {
+                toast.error(response.message || "Failed to add instructions.", { theme: "dark" });
+            }
+        } catch (error) {
+            console.error("Error adding special instructions:", error);
+            toast.error("An error occurred while adding instructions.", { theme: "dark" });
+        }
+    };
+
+    // Shared class for form inputs for consistency
+    const formInputClass = "w-full bg-gray-800 border border-gray-600 rounded text-white p-2 text-sm font-mono placeholder-gray-400 focus:border-main-purple focus:outline-none";
+    const formLabelClass = "block text-sm font-medium text-gray-300 mb-1 font-mono";
+
     return (
         <div
-            className={`fixed inset-0 w-screen h-screen bg-black bg-opacity-70 z-50 flex justify-end transition-all duration-300 ${
-                isOpen ? "visible opacity-100" : "invisible opacity-0"
-            }`}
-            onClick={onClose} // Clicking the overlay closes the sidebar
+            className={`fixed inset-0 w-screen h-screen bg-black bg-opacity-70 z-50 flex justify-end transition-all duration-300 ${isOpen ? "visible opacity-100" : "invisible opacity-0"
+                }`}
+            onClick={onClose}
         >
             <div
-                className={`w-full max-w-md h-screen bg-main-bg shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out overflow-y-auto ${
-                    isOpen ? "translate-x-0" : "translate-x-full"
-                }`}
-                onClick={(e) => e.stopPropagation()} // Prevent clicks inside sidebar from closing it
+                className={`w-full max-w-md h-screen bg-main-bg shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
+                    }`}
+                onClick={(e) => e.stopPropagation()}
             >
-                {/* Header */}
-                <div className="flex justify-between items-center p-6 border-b border-gray-700">
-                    <h2 className="m-0 text-2xl font-black text-white text-center font-mono flex-grow">
-                        CART
-                    </h2>
+                {/* Header Section */}
+                <div className="flex justify-between items-center p-6 border-b border-gray-700 flex-shrink-0">
+                    <h2 className="m-0 text-2xl font-black text-white text-center font-mono flex-grow">CART</h2>
                     <button
-                        className="bg-transparent border-none text-white text-3xl cursor-pointer p-0 leading-none hover:text-main-purple transition-colors duration-200"
-                        onClick={onClose} // Close button uses the onClose prop
+                        className="bg-transparent border-none text-white text-3xl cursor-pointer p-0 leading-none hover:text-main-purple transition-colors"
+                        onClick={onClose}
                     >
                         ×
                     </button>
                 </div>
 
+                {/* Conditional Rendering: Empty Cart or Cart Content */}
                 {groupedItems.length === 0 ? (
-                    <p className="text-white text-center text-lg p-6">Your cart is empty.</p>
+                    <div className="flex-1 flex items-center justify-center">
+                        <p className="text-white text-center text-lg p-6">Your cart is empty.</p>
+                    </div>
                 ) : (
                     <>
-                        {/* Cart Items */}
-                        {/* Ensure max-h is responsive but prevents content from overflowing viewport */}
-                        <div className="flex-1 overflow-y-auto p-4 max-h-[calc(100vh-theme(spacing.24)_-_theme(spacing.4))] lg:max-h-[calc(100vh-280px)]">
+                        {/* Cart Items List - uses flex-1 to occupy available space and scrolls internally */}
+                        <div className="flex-1 overflow-y-auto p-4">
                             {groupedItems.map((item) => (
-                                // Use item.product and item.size for unique key as these are the identifiers
-                                <div className="flex py-4 border-b border-gray-700 bg-transparent rounded-none gap-4" key={`${item.product}-${item.size || 'default'}`}>
-                                    <img
-                                        src={item.image}
-                                        alt={item.name}
-                                        className="w-20 h-20 object-cover rounded-lg bg-transparent flex-shrink-0"
-                                    />
+                                <div className="flex py-4 border-b border-gray-700 gap-4" key={`${item.product}-${item.size || 'default'}`}>
+                                    <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-lg flex-shrink-0" />
                                     <div className="flex-1 flex flex-col">
                                         <h4 className="m-0 mb-2 text-base text-white font-mono">{item.name}</h4>
                                         <p className="m-0 mb-2 text-sm text-gray-300">₹{item.price.toFixed(2)}</p>
-                                        {item.size && (
-                                            <p className="m-0 mb-2 text-xs text-gray-400">Size: {item.size}</p>
-                                        )}
-                                        <div className="flex items-center justify-start gap-0 mt-2 rounded-lg overflow-hidden">
-                                            <button
-                                                className="bg-main-purple text-white border-none rounded-l-lg w-8 h-8 text-lg flex justify-center items-center cursor-pointer transition-colors duration-200 hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                // Pass item.product and item.size to updateQuantity
-                                                onClick={() => updateQuantity(item.product, item.size, -1)}
-                                                disabled={item.quantity <= 1}
-                                            >
-                                                -
-                                            </button>
-                                            <span className="text-white text-base font-bold min-w-8 text-center bg-gray-800 h-8 flex justify-center items-center border-t border-b border-gray-600">
-                                                {item.quantity}
-                                            </span>
-                                            <button
-                                                className="bg-main-purple text-white border-none rounded-r-lg w-8 h-8 text-lg flex justify-center items-center cursor-pointer transition-colors duration-200 hover:bg-purple-600"
-                                                // Pass item.product and item.size to updateQuantity
-                                                onClick={() => updateQuantity(item.product, item.size, 1)}
-                                            >
-                                                +
-                                            </button>
+                                        {item.size && (<p className="m-0 mb-2 text-xs text-gray-400">Size: {item.size}</p>)}
+                                        <div className="flex items-center mt-2">
+                                            <button className="bg-main-purple text-white border-none rounded-l-lg w-8 h-8 text-lg flex justify-center items-center cursor-pointer hover:bg-purple-600 disabled:opacity-50" onClick={() => updateQuantity(item.product, item.size, -1)} disabled={item.quantity <= 1}>-</button>
+                                            <span className="text-white text-base font-bold min-w-8 text-center bg-gray-800 h-8 flex justify-center items-center">{item.quantity}</span>
+                                            <button className="bg-main-purple text-white border-none rounded-r-lg w-8 h-8 text-lg flex justify-center items-center cursor-pointer hover:bg-purple-600" onClick={() => updateQuantity(item.product, item.size, 1)}>+</button>
                                         </div>
-                                        <button
-                                            className="bg-transparent text-red-400 border border-red-400 py-2 px-3 rounded cursor-pointer text-xs mt-3 self-start transition-all duration-200 hover:bg-red-400 hover:text-white font-mono"
-                                            // Pass item.product and item.size to removeFromCart
-                                            onClick={() => removeFromCart(item.product, item.size)}
-                                        >
-                                            Remove
-                                        </button>
+                                        <button className="bg-transparent text-red-400 border border-red-400 py-2 px-3 rounded cursor-pointer text-xs mt-3 self-start transition-all hover:bg-red-400 hover:text-white font-mono" onClick={() => removeFromCart(item.product, item.size)}>Remove</button>
                                     </div>
-                                    <div className="text-right text-white font-mono text-base font-bold flex flex-col justify-end">
-                                        ₹{(item.price * item.quantity).toFixed(2)} {/* Format to 2 decimal places */}
+                                    <div className="text-right text-white font-mono text-base font-bold">
+                                        ₹{(item.price * item.quantity).toFixed(2)}
                                     </div>
                                 </div>
                             ))}
                         </div>
 
-                        {/* Cart Footer */}
-                        <div className="p-4 border-t border-gray-700 flex-shrink-0">
+                        {/* Cart Footer Section (scrollable content) */}
+                        <div className="p-4 border-t border-gray-700 flex-shrink-0 overflow-y-auto">
                             {/* Special Instructions */}
-                            <div className="mb-6">
+                            <div className="mb-4">
                                 {showInstructions ? (
                                     <>
                                         <textarea
-                                            placeholder="Add any special instructions/notes"
+                                            placeholder="Add any special instructions..."
                                             value={specialInstructions}
                                             onChange={(e) => setSpecialInstructions(e.target.value)}
-                                            className="w-full h-20 bg-gray-800 border border-gray-600 rounded text-white p-2 text-sm resize-none mt-2 font-mono placeholder-gray-400 focus:border-main-purple focus:outline-none"
+                                            className={`${formInputClass} h-20 resize-none`}
                                         />
                                         <div className="flex justify-end gap-2.5 mt-2.5">
-                                            <button
-                                                className="py-2 px-4 rounded cursor-pointer font-bold transition-all duration-200 ease-in-out bg-transparent text-white border border-gray-600 hover:bg-gray-700 font-mono text-sm"
-                                                onClick={() => {
-                                                    setSpecialInstructions("");
-                                                    setShowInstructions(false);
-                                                }}
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                className="py-2 px-4 rounded cursor-pointer font-bold transition-all duration-200 ease-in-out bg-main-purple text-white border border-main-purple hover:bg-purple-700 hover:border-purple-700 font-mono text-sm"
-                                                onClick={() => setShowInstructions(false)}
-                                            >
-                                                Add Note
-                                            </button>
+                                            <button className="py-2 px-4 rounded cursor-pointer font-bold transition-all bg-transparent text-white border border-gray-600 hover:bg-gray-700 font-mono text-sm" onClick={() => { setSpecialInstructions(""); setShowInstructions(false); }}>Cancel</button>
+                                            <button className="py-2 px-4 rounded cursor-pointer font-bold transition-all bg-main-purple text-white border border-main-purple hover:bg-purple-700 font-mono text-sm" onClick={() => {
+                                                toast.success("Instructions added!", { theme: "dark" });
+                                                setShowInstructions(false);
+                                                handleCustomisation(); // <--- Notice the parentheses here!
+                                            }}>Add Note</button>
                                         </div>
                                     </>
                                 ) : (
-                                    <button
-                                        className="mt-2 text-sm inline-block bg-transparent border border-main-purple text-main-purple py-2 px-4 rounded cursor-pointer hover:bg-main-purple hover:text-white transition-all duration-200 font-mono"
-                                        onClick={() => setShowInstructions(true)}
-                                    >
-                                        Add special instructions/notes
-                                    </button>
+                                    <button className="text-sm inline-block bg-transparent border border-main-purple text-main-purple py-2 px-4 rounded cursor-pointer hover:bg-main-purple hover:text-white transition-all font-mono" onClick={() => setShowInstructions(true)}>Add Customization</button>
                                 )}
                             </div>
 
                             {/* Discount Code */}
-                            <div className="flex gap-2 mb-6">
-                                <input
-                                    type="text"
-                                    placeholder="Apply Discount Code"
-                                    value={discountCode}
-                                    onChange={(e) => setDiscountCode(e.target.value)}
-                                    className="flex-1 bg-gray-800 border border-gray-600 rounded text-white p-3 text-sm font-mono placeholder-gray-400 focus:border-main-purple focus:outline-none"
-                                />
-                                <button
-                                    className="bg-main-purple text-white border-none rounded px-4 text-sm cursor-pointer hover:bg-purple-600 transition-colors duration-200 font-mono font-bold"
-                                    onClick={applyDiscount}
-                                >
-                                    Apply
-                                </button>
+                            <div className="mb-4">
+                                <div className="flex gap-2">
+                                    <input type="text" placeholder="Apply Discount Code" value={discountCodeInput} onChange={(e) => setDiscountCodeInput(e.target.value)} className={`${formInputClass} p-3`} />
+                                    <button className="bg-main-purple text-white border-none rounded px-4 text-sm cursor-pointer hover:bg-purple-600 transition-colors font-mono font-bold" onClick={handleApplyDiscount}>Apply</button>
+                                </div>
+                                {appliedDiscount && <p className="mt-2 text-sm text-accent-pink font-mono">Discount '{appliedDiscount.code}' applied ({appliedDiscount.percentage}% off)!</p>}
                             </div>
 
-                            {/* Cart Summary */}
-                            <div className="mb-6">
-                                <div className="flex justify-between mb-3 text-sm text-gray-300 font-mono">
+                            {/* Shipping Address */}
+                            <div className="mb-4 border-t border-gray-700 pt-4">
+                                <div className="flex justify-between items-center mb-3">
+                                    <h3 className="text-lg font-bold text-white font-mono m-0">Shipping Address</h3>
+                                    {isAddressSaved && !showAddressForm && (
+                                        <button onClick={() => setShowAddressForm(true)} className="text-sm text-main-purple hover:text-purple-400 font-mono transition-colors bg-transparent border-none cursor-pointer">Edit</button>
+                                    )}
+                                </div>
+                                {showAddressForm ? (
+                                    <form onSubmit={handleSaveAddress} className="space-y-3">
+                                        <div>
+                                            <label htmlFor="street" className={formLabelClass}>Street Address <span className="text-red-500">*</span></label>
+                                            <input type="text" id="street" name="street" value={shippingAddressForm.street} onChange={handleAddressChange} className={formInputClass} required />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="apartment" className={formLabelClass}>Apartment, Suite, etc. (Optional)</label>
+                                            <input type="text" id="apartment" name="apartment" value={shippingAddressForm.apartment} onChange={handleAddressChange} className={formInputClass} />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label htmlFor="city" className={formLabelClass}>City <span className="text-red-500">*</span></label>
+                                                <input type="text" id="city" name="city" value={shippingAddressForm.city} onChange={handleAddressChange} className={formInputClass} required />
+                                            </div>
+                                            <div>
+                                                <label htmlFor="state" className={formLabelClass}>State <span className="text-red-500">*</span></label>
+                                                <input type="text" id="state" name="state" value={shippingAddressForm.state} onChange={handleAddressChange} className={formInputClass} required />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label htmlFor="postalCode" className={formLabelClass}>Postal Code <span className="text-red-500">*</span></label>
+                                                <input type="text" id="postalCode" name="postalCode" value={shippingAddressForm.postalCode} onChange={handleAddressChange} className={formInputClass} required />
+                                            </div>
+                                            <div>
+                                                <label htmlFor="country" className={formLabelClass}>Country <span className="text-red-500">*</span></label>
+                                                <input type="text" id="country" name="country" value={shippingAddressForm.country} onChange={handleAddressChange} className={formInputClass} required />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label htmlFor="landmark" className={formLabelClass}>Landmark (Optional)</label>
+                                            <input type="text" id="landmark" name="landmark" value={shippingAddressForm.landmark} onChange={handleAddressChange} className={formInputClass} />
+                                        </div>
+                                        <div className="flex justify-end gap-2.5 pt-2">
+                                            <button type="button" className="py-2 px-4 rounded cursor-pointer font-bold transition-all bg-transparent text-white border border-gray-600 hover:bg-gray-700 font-mono text-sm" onClick={() => setShowAddressForm(false)}>Cancel</button>
+                                            <button type="submit" className="py-2 px-4 rounded cursor-pointer font-bold transition-all bg-main-purple text-white border border-main-purple hover:bg-purple-700 font-mono text-sm">Save Address</button>
+                                        </div>
+                                    </form>
+                                ) : (
+                                    <>
+                                        {isAddressSaved ? (
+                                            <div className="text-gray-300 text-sm font-mono space-y-1">
+                                                <p>{shippingAddressForm.street}{shippingAddressForm.apartment && `, ${shippingAddressForm.apartment}`}</p>
+                                                <p>{shippingAddressForm.city}, {shippingAddressForm.state} - {shippingAddressForm.postalCode}</p>
+                                                <p>{shippingAddressForm.country}</p>
+                                                {shippingAddressForm.landmark && <p className="text-gray-400">Landmark: {shippingAddressForm.landmark}</p>}
+                                            </div>
+                                        ) : (
+                                            <button className="text-sm inline-block bg-transparent border border-main-purple text-main-purple py-2 px-4 rounded cursor-pointer hover:bg-main-purple hover:text-white transition-all font-mono" onClick={() => setShowAddressForm(true)}>Add Shipping Address</button>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Cart Summary Totals */}
+                            <div className="mb-4 space-y-3">
+                                <div className="flex justify-between text-sm text-gray-300 font-mono">
                                     <span>Subtotal</span>
                                     <span>₹{subtotal.toFixed(2)}</span>
                                 </div>
                                 {appliedDiscount && (
-                                    <div className="flex justify-between mb-3 text-sm text-accent-pink font-mono">
+                                    <div className="flex justify-between text-sm text-accent-pink font-mono">
                                         <span>Discount ({appliedDiscount.percentage}%)</span>
                                         <span>-₹{appliedDiscount.amount.toFixed(2)}</span>
                                     </div>
                                 )}
-                                <div className="flex justify-between mb-3 text-sm text-gray-300 font-mono">
+                                <div className="flex justify-between text-sm text-gray-300 font-mono">
                                     <span>Shipping</span>
                                     <span>FREE</span>
                                 </div>
@@ -217,22 +335,29 @@ const CartSidebar = ({ isOpen, onClose }) => {
                             </div>
 
                             {/* Cart Actions */}
-                            <div className="flex flex-col gap-4 mb-6">
-                                <button className="bg-main-purple text-white border-none rounded-2xl py-3 text-base font-bold cursor-pointer text-center hover:bg-purple-600 transition-colors duration-200 font-mono tracking-wider">
+                            <div className="flex flex-col gap-3 mb-4">
+                                <button
+                                    className={`text-white border-none rounded-lg py-3 text-base font-bold cursor-pointer text-center transition-colors font-mono tracking-wider ${isAddressSaved && groupedItems.length > 0
+                                            ? "bg-main-purple hover:bg-purple-600"
+                                            : "bg-gray-600 cursor-not-allowed opacity-60"
+                                        }`}
+                                    onClick={handleCheckout}
+                                    disabled={!isAddressSaved || groupedItems.length === 0}
+                                >
                                     CHECKOUT
                                 </button>
                                 <Link
                                     to="/shop"
                                     onClick={onClose}
-                                    className="bg-transparent text-white border border-main-purple rounded-2xl py-3 text-sm cursor-pointer text-center hover:bg-main-purple hover:text-white transition-all duration-200 font-mono tracking-wider no-underline"
+                                    className="bg-transparent text-white border border-main-purple rounded-lg py-3 text-sm cursor-pointer text-center hover:bg-main-purple hover:text-white transition-all font-mono tracking-wider no-underline"
                                 >
                                     Continue Shopping
                                 </Link>
                             </div>
 
-                            {/* Payment Info */}
+                            {/* Payment Info Footer */}
                             <div className="text-center">
-                                <p className="m-0 mb-3 text-xs text-gray-400 font-mono">
+                                <p className="m-0 text-xs text-gray-400 font-mono">
                                     Secure checkout powered by Stripe
                                 </p>
                             </div>

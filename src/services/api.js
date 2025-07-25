@@ -18,39 +18,39 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Products API
+// Products API (no changes needed here)
 export const productAPI = {
   getAll: async () => {
     const response = await api.get('/products');
     return response.data;
   },
-  
+
   getById: async (id) => {
     const response = await api.get(`/products/${id}`);
     return response.data;
   },
-  
+
   getByCategory: async (category) => {
-  console.log("Fetching category:", category); // debug log
-  const response = await api.get(`/products/category/${category}`);
-  return response.data;
-},
-  
+    console.log("Fetching category:", category); // debug log
+    const response = await api.get(`/products/category/${category}`);
+    return response.data;
+  },
+
   getFeatured: async () => {
     const response = await api.get('/products/featured');
     return response.data;
   },
-  
+
   create: async (productData) => {
     const response = await api.post('/products', productData);
     return response.data;
   },
-  
+
   update: async (id, productData) => {
     const response = await api.put(`/products/${id}`, productData);
     return response.data;
   },
-  
+
   delete: async (id) => {
     const response = await api.delete(`/products/${id}`);
     return response.data;
@@ -63,62 +63,64 @@ export const cartAPI = {
     const response = await api.get(`/cart/${userId}`);
     return response.data;
   },
-  
+
+  // Existing function to update cart items
   updateCart: async (userId, items) => {
     const response = await api.put(`/cart/${userId}`, { items });
     return response.data;
   },
-  
+
+  // NEW: Function to update specific cart details (special instructions, discount, address)
+  updateCartDetails: async (userId, detailsToUpdate) => {
+    // detailsToUpdate will be an object like { specialInstructions: "...", shippingAddress: {...} }
+    const response = await api.patch(`/cart/${userId}/details`, detailsToUpdate);
+    return response.data;
+  },
+
   addToCart: async (userId, productId, quantity = 1, options = {}) => {
     const response = await api.post(`/cart/${userId}/add`, {
       productId,
       quantity,
-      options
+      options,
     });
     return response.data;
   },
-  
+
   removeFromCart: async (userId, itemId) => {
     const response = await api.delete(`/cart/${userId}/remove/${itemId}`);
     return response.data;
   },
-  
+
   clearCart: async (userId) => {
     const response = await api.delete(`/cart/${userId}/clear`);
     return response.data;
   }
 };
 
-// Orders API
+// Orders API (no changes needed here)
 export const orderAPI = {
   create: async (orderData) => {
     const response = await api.post('/orders', orderData);
     return response.data;
   },
-  
+
   getByUserId: async (userId) => {
     const response = await api.get(`/orders/user/${userId}`);
     return response.data;
   },
-  
+
   getById: async (orderId) => {
     const response = await api.get(`/orders/${orderId}`);
     return response.data;
   },
-  
+
   updateStatus: async (orderId, status) => {
     const response = await api.put(`/orders/${orderId}/status`, { status });
     return response.data;
   }
 };
 
-// Users API
-// api.jsx
-
-// Assuming 'api' is your Axios instance already configured (e.g., with a base URL)
-// import axios from 'axios';
-// const api = axios.create({ baseURL: '/api' }); // Example setup
-
+// Users API (no changes needed here)
 export const userAPI = {
   create: async (userData) => {
     const response = await api.post('/users', userData);

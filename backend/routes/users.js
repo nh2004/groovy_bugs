@@ -21,18 +21,10 @@ const handleValidationErrors = (req, res, next) => {
 const authenticateToken = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
-
-    if (!token) {
-      return res.status(401).json({ message: 'Access token required' });
-    }
-
+    if (!token) return res.status(401).json({ message: 'Access token required' });
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId).select('-password');
-
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
-
+    if (!user) return res.status(401).json({ message: 'Invalid token' });
     req.user = user;
     next();
   } catch (error) {
@@ -40,14 +32,40 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-router.post("/profile-details", async (req, res) => {
-  const { clerkId, name, gender, dob, address, preferences } = req.body;
+// ----- COMPLETE PROFILE ROUTE -----
+router.post("/profile-details", [
+  body('clerkId').notEmpty().withMessage('Clerk ID is required'),
+  body('firstName').notEmpty().withMessage('First name is required'),
+  body('lastName').notEmpty().withMessage('Last name is required'),
+  body('gender').notEmpty().isIn(['male', 'female', 'other', 'prefer_not_to_say']).withMessage('Valid gender required'),
+  body('dateOfBirth').notEmpty().isISO8601().withMessage('Valid date of birth required'),
+  // Accept 'address' as a full single address object
+  body('address').isObject().withMessage('Address is required'),
+  body('address.fullName').notEmpty(),
+  body('address.addressLine1').notEmpty(),
+  body('address.city').notEmpty(),
+  body('address.state').notEmpty(),
+  body('address.postalCode').notEmpty(),
+  body('address.country').notEmpty(),
+  body('address.phone').notEmpty(),
+  // Optionally: validate preferences.favoriteCategories as array
+  handleValidationErrors
+], async (req, res) => {
+  const { clerkId, firstName, lastName, gender, dateOfBirth, preferences, address } = req.body;
   try {
     await User.updateOne(
       { clerkId },
       {
-        $set: { name, gender, dob, address, preferences },
-      }
+        $set: {
+          firstName,
+          lastName,
+          gender,
+          dateOfBirth,
+          preferences,
+          addresses: [address]
+        }
+      },
+      { upsert: false }
     );
     res.status(200).json({ message: "Profile updated" });
   } catch (err) {
@@ -57,20 +75,23 @@ router.post("/profile-details", async (req, res) => {
 
 router.get('/profile-details/:clerkId', async (req, res) => {
   const { clerkId } = req.params;
-  const user = await User.findOne({ clerkId });
-
+  const user = await User.findOne({ clerkId })
+    .select('-password');
   if (!user) return res.status(404).json({});
   return res.status(200).json(user);
 });
 
-
-router.post("/clerk-sync", async (req, res) => {
+// ----- CLERK SYNC ROUTE -----
+router.post("/clerk-sync", [
+  body('clerkId').notEmpty().withMessage('Clerk ID is required'),
+  body('email').isEmail().withMessage('Valid email is required'),
+], handleValidationErrors, async (req, res) => {
   try {
-    const { clerkId, email, name, image } = req.body;
+    const { clerkId, email, firstName, lastName, image } = req.body;
     const existingUser = await User.findOne({ clerkId });
     if (existingUser) return res.status(200).json(existingUser);
 
-    const newUser = new User({ clerkId, email, name, image });
+    const newUser = new User({ clerkId, email, firstName, lastName, image });
     await newUser.save();
     res.status(201).json(newUser);
   } catch (err) {
@@ -78,7 +99,7 @@ router.post("/clerk-sync", async (req, res) => {
   }
 });
 
-// POST /api/users - Create user (for Clerk integration)
+// ----- CREATE USER ROUTE FOR CLERK -----
 router.post('/', [
   body('clerkId').notEmpty().withMessage('Clerk ID is required'),
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
@@ -87,17 +108,10 @@ router.post('/', [
 ], handleValidationErrors, async (req, res) => {
   try {
     const { clerkId, email, firstName, lastName, phone, dateOfBirth, gender } = req.body;
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ 
-      $or: [{ clerkId }, { email }] 
-    });
-    
+    const existingUser = await User.findOne({ $or: [{ clerkId }, { email }] });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
-
-    // Create new user
     const user = new User({
       clerkId,
       email,
@@ -109,9 +123,7 @@ router.post('/', [
       isActive: true,
       lastLoginAt: new Date()
     });
-
     await user.save();
-
     res.status(201).json({
       message: 'User created successfully',
       user
@@ -122,7 +134,7 @@ router.post('/', [
   }
 });
 
-// GET /api/users/:id - Get user by ID
+// ----- GET USER BY DB ID -----
 router.get('/:id', [
   param('id').isMongoId().withMessage('Invalid user ID')
 ], handleValidationErrors, async (req, res) => {
@@ -131,11 +143,9 @@ router.get('/:id', [
       .select('-password')
       .populate('wishlist', 'name image price category')
       .populate('recentlyViewed.product', 'name image price category');
-
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
     res.json(user);
   } catch (error) {
     console.error('Error fetching user:', error);
@@ -143,7 +153,7 @@ router.get('/:id', [
   }
 });
 
-// GET /api/users/clerk/:clerkId - Get user by Clerk ID
+// ----- GET USER BY CLERK ID -----
 router.get('/clerk/:clerkId', [
   param('clerkId').notEmpty().withMessage('Clerk ID is required')
 ], handleValidationErrors, async (req, res) => {
@@ -152,11 +162,9 @@ router.get('/clerk/:clerkId', [
       .select('-password')
       .populate('wishlist', 'name image price category')
       .populate('recentlyViewed.product', 'name image price category');
-
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
     res.json(user);
   } catch (error) {
     console.error('Error fetching user by Clerk ID:', error);
@@ -164,7 +172,7 @@ router.get('/clerk/:clerkId', [
   }
 });
 
-// PUT /api/users/:id - Update user profile
+// ----- UPDATE USER PROFILE (token-protected) -----
 router.put('/:id', authenticateToken, [
   param('id').isMongoId().withMessage('Invalid user ID'),
   body('firstName').optional().trim().isLength({ min: 1 }).withMessage('First name cannot be empty'),
@@ -176,26 +184,21 @@ router.put('/:id', authenticateToken, [
 ], handleValidationErrors, async (req, res) => {
   try {
     const userId = req.params.id;
-    
-    // Check if user is updating their own profile or is admin
     if (req.user._id.toString() !== userId) {
       return res.status(403).json({ message: 'Access denied' });
     }
-
     const updateData = req.body;
-    delete updateData.clerkId; // Prevent clerkId updates
-    delete updateData.password; // Prevent password updates through this route
+    delete updateData.clerkId;
+    delete updateData.password;
 
     const user = await User.findByIdAndUpdate(
       userId,
       updateData,
       { new: true, runValidators: true }
     ).select('-password');
-
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
     res.json({
       message: 'Profile updated successfully',
       user
@@ -206,7 +209,9 @@ router.put('/:id', authenticateToken, [
   }
 });
 
-// POST /api/users/:id/addresses - Add new address
+// ----- ADDRESS MANAGEMENT ROUTES (All token-protected) -----
+
+// Add new address
 router.post('/:id/addresses', authenticateToken, [
   param('id').isMongoId().withMessage('Invalid user ID'),
   body('fullName').trim().isLength({ min: 1 }).withMessage('Full name is required'),
@@ -219,28 +224,20 @@ router.post('/:id/addresses', authenticateToken, [
 ], handleValidationErrors, async (req, res) => {
   try {
     const userId = req.params.id;
-    
     if (req.user._id.toString() !== userId) {
       return res.status(403).json({ message: 'Access denied' });
     }
-
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     const newAddress = req.body;
-    
-    // If this is the first address or marked as default, make it default
+    // If first address or marked as default, make it default
     if (user.addresses.length === 0 || newAddress.isDefault) {
-      // Remove default from other addresses
       user.addresses.forEach(addr => addr.isDefault = false);
       newAddress.isDefault = true;
     }
-
     user.addresses.push(newAddress);
     await user.save();
-
     res.status(201).json({
       message: 'Address added successfully',
       address: user.addresses[user.addresses.length - 1]
@@ -251,32 +248,24 @@ router.post('/:id/addresses', authenticateToken, [
   }
 });
 
-// PUT /api/users/:id/addresses/:addressId - Update address
+// Update address
 router.put('/:id/addresses/:addressId', authenticateToken, [
   param('id').isMongoId().withMessage('Invalid user ID'),
   param('addressId').isMongoId().withMessage('Invalid address ID')
 ], handleValidationErrors, async (req, res) => {
   try {
     const { id: userId, addressId } = req.params;
-    
     if (req.user._id.toString() !== userId) {
       return res.status(403).json({ message: 'Access denied' });
     }
-
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     const address = user.addresses.id(addressId);
-    if (!address) {
-      return res.status(404).json({ message: 'Address not found' });
-    }
+    if (!address) return res.status(404).json({ message: 'Address not found' });
 
-    // Update address fields
     Object.assign(address, req.body);
 
-    // Handle default address logic
     if (req.body.isDefault) {
       user.addresses.forEach(addr => {
         if (addr._id.toString() !== addressId) {
@@ -286,7 +275,6 @@ router.put('/:id/addresses/:addressId', authenticateToken, [
     }
 
     await user.save();
-
     res.json({
       message: 'Address updated successfully',
       address
@@ -297,38 +285,30 @@ router.put('/:id/addresses/:addressId', authenticateToken, [
   }
 });
 
-// DELETE /api/users/:id/addresses/:addressId - Delete address
+// Delete address
 router.delete('/:id/addresses/:addressId', authenticateToken, [
   param('id').isMongoId().withMessage('Invalid user ID'),
   param('addressId').isMongoId().withMessage('Invalid address ID')
 ], handleValidationErrors, async (req, res) => {
   try {
     const { id: userId, addressId } = req.params;
-    
     if (req.user._id.toString() !== userId) {
       return res.status(403).json({ message: 'Access denied' });
     }
-
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     const address = user.addresses.id(addressId);
-    if (!address) {
-      return res.status(404).json({ message: 'Address not found' });
-    }
+    if (!address) return res.status(404).json({ message: 'Address not found' });
 
     const wasDefault = address.isDefault;
     user.addresses.pull({ _id: addressId });
 
-    // If deleted address was default, make first remaining address default
     if (wasDefault && user.addresses.length > 0) {
       user.addresses[0].isDefault = true;
     }
 
     await user.save();
-
     res.json({ message: 'Address deleted successfully' });
   } catch (error) {
     console.error('Error deleting address:', error);
@@ -336,7 +316,7 @@ router.delete('/:id/addresses/:addressId', authenticateToken, [
   }
 });
 
-// POST /api/users/:id/wishlist - Add product to wishlist
+// ----- WISHLIST MANAGEMENT -----
 router.post('/:id/wishlist', authenticateToken, [
   param('id').isMongoId().withMessage('Invalid user ID'),
   body('productId').isMongoId().withMessage('Valid product ID is required')
@@ -344,24 +324,16 @@ router.post('/:id/wishlist', authenticateToken, [
   try {
     const userId = req.params.id;
     const { productId } = req.body;
-    
     if (req.user._id.toString() !== userId) {
       return res.status(403).json({ message: 'Access denied' });
     }
-
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Check if product already in wishlist
+    if (!user) return res.status(404).json({ message: 'User not found' });
     if (user.wishlist.includes(productId)) {
       return res.status(400).json({ message: 'Product already in wishlist' });
     }
-
     user.wishlist.push(productId);
     await user.save();
-
     res.json({ message: 'Product added to wishlist' });
   } catch (error) {
     console.error('Error adding to wishlist:', error);
@@ -369,26 +341,19 @@ router.post('/:id/wishlist', authenticateToken, [
   }
 });
 
-// DELETE /api/users/:id/wishlist/:productId - Remove product from wishlist
 router.delete('/:id/wishlist/:productId', authenticateToken, [
   param('id').isMongoId().withMessage('Invalid user ID'),
   param('productId').isMongoId().withMessage('Invalid product ID')
 ], handleValidationErrors, async (req, res) => {
   try {
     const { id: userId, productId } = req.params;
-    
     if (req.user._id.toString() !== userId) {
       return res.status(403).json({ message: 'Access denied' });
     }
-
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
+    if (!user) return res.status(404).json({ message: 'User not found' });
     user.wishlist.pull(productId);
     await user.save();
-
     res.json({ message: 'Product removed from wishlist' });
   } catch (error) {
     console.error('Error removing from wishlist:', error);

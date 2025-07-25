@@ -1,5 +1,51 @@
 import mongoose from 'mongoose';
 
+
+const addressSchema = new mongoose.Schema({
+    street: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: [100, 'Street cannot exceed 100 characters']
+    },
+    city: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: [50, 'City cannot exceed 50 characters']
+    },
+    state: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: [50, 'State cannot exceed 50 characters']
+    },
+    postalCode: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: [10, 'Postal code cannot exceed 10 characters']
+    },
+    country: {
+        type: String,
+        required: true,
+        trim: true,
+        default: 'India', // Given your current location, a sensible default
+        maxlength: [50, 'Country cannot exceed 50 characters']
+    },
+    // Optional fields for more detail
+    apartment: {
+        type: String,
+        trim: true,
+        maxlength: [50, 'Apartment/Suite cannot exceed 50 characters']
+    },
+    landmark: {
+        type: String,
+        trim: true,
+        maxlength: [100, 'Landmark cannot exceed 100 characters']
+    }
+}, { _id: false });
+
 const cartItemSchema = new mongoose.Schema({
   product: {
     type: mongoose.Schema.Types.ObjectId,
@@ -29,7 +75,17 @@ const cartItemSchema = new mongoose.Schema({
   addedAt: {
     type: Date,
     default: Date.now
-  }
+  },
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  image: {
+    type: String,
+    required: true,
+    trim: true
+  } 
 });
 
 const cartSchema = new mongoose.Schema({
@@ -60,7 +116,10 @@ const cartSchema = new mongoose.Schema({
   specialInstructions: {
     type: String,
     maxlength: [500, 'Special instructions cannot exceed 500 characters']
-  }
+  },
+  shippingAddress: {
+        type: addressSchema,
+      }
 }, {
   timestamps: true
 });
