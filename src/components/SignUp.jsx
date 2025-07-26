@@ -3,7 +3,7 @@ import { SignUp as ClerkSignUp, useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import useClerkSync from "../Utils/ClerkSync";
 import CompleteProfile from "../components/CompleteProfile"; // 🧩 Modal form
-import userAPI from "../services/api"; // 🧩 API service for user profile
+
 
 const SignUp = () => {
   const { isSignedIn } = useUser();
@@ -24,6 +24,9 @@ const SignUp = () => {
     addr.country &&
     addr.phone;
 
+    if (isSignedIn) {
+      setShowModal(false);
+    }
   if (isSignedIn && user) {
     (async () => {
       await syncUser();

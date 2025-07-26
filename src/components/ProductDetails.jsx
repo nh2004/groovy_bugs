@@ -10,15 +10,23 @@ const posterSizes = [
     { value: "A4", label: "A4 - 17 Posters" },
     { value: "A3", label: "A3 - 17 Posters" }
 ];
-
+const TeesSizes = [
+    { value: "S", label: "S" },
+    { value: "M", label: "M" },
+    { value: "L", label: "L" },
+    { value: "XL", label: "XL" },
+    { value: "XXL", label: "XXL" }
+];
 const ProductDetails = () => {
     const { id } = useParams();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [quantity, setQuantity] = useState(1);
-    const [size, setSize] = useState(posterSizes[0].value);
-
+    // Renamed 'size' to 'selectedPosterSize' for clarity and added 'selectedTeeSize'
+    const [selectedPosterSize, setSelectedPosterSize] = useState(posterSizes[0].value);
+    const [selectedTeeSize, setSelectedTeeSize] = useState(TeesSizes[0].value);
+    
     // Destructure `addToCart` from useCart and alias it to `contextAddToCart`
     const { addToCart: contextAddToCart } = useCart();
     const { isSignedIn } = useAuth();
@@ -30,6 +38,12 @@ const ProductDetails = () => {
             try {
                 const fetchedProduct = await productAPI.getById(id);
                 setProduct(fetchedProduct);
+                // Set initial size based on product category once fetched
+                if (fetchedProduct.category && fetchedProduct.category.toLowerCase().includes("poster")) {
+                    setSelectedPosterSize(posterSizes[0].value);
+                } else if (fetchedProduct.category && fetchedProduct.category.toLowerCase().includes("tee")) {
+                    setSelectedTeeSize(TeesSizes[0].value);
+                }
             } catch (err) {
                 console.error("Failed to fetch product:", err);
                 setError("Failed to load product. Please try again.");
@@ -80,7 +94,9 @@ const ProductDetails = () => {
         );
     }
 
-    const isPoster = product.category && product.category.toLowerCase().includes("poster");
+    // Determine product category for conditional rendering
+    const isPosterCategory = product.category && product.category.toLowerCase().includes("poster");
+    const isTeeCategory = product.category && product.category.toLowerCase().includes("tee");
 
     const handleAddToCart = async () => {
         if (!isSignedIn) {
@@ -98,14 +114,21 @@ const ProductDetails = () => {
             return;
         }
 
+        // Determine the correct size to add based on category
+        let selectedSize = undefined;
+        if (isPosterCategory) {
+            selectedSize = selectedPosterSize;
+        } else if (isTeeCategory) {
+            selectedSize = selectedTeeSize;
+        }
+
         // Construct the item object as expected by CartContext's addToCart
         const itemToAdd = {
             _id: product._id || product.id, // Use _id for consistency with MongoDB IDs
             name: product.name,
             price: product.price,
             image: product.image,
-            // quantity: quantity, // Quantity is passed as a separate argument to contextAddToCart
-            size: isPoster ? size : undefined, // Only include size if it's a poster
+            size: selectedSize, // Include the determined size
         };
 
         try {
@@ -183,18 +206,37 @@ const ProductDetails = () => {
                         </div>
 
                         {/* Size Selection for Posters */}
-                        {isPoster && (
+                        {isPosterCategory && (
                             <div className="space-y-3">
-                                <label htmlFor="size-select" className="block text-white font-medium font-mono text-lg">
+                                <label htmlFor="poster-size-select" className="block text-white font-medium font-mono text-lg">
                                     Size
                                 </label>
                                 <select
-                                    id="size-select"
-                                    value={size}
-                                    onChange={e => setSize(e.target.value)}
+                                    id="poster-size-select"
+                                    value={selectedPosterSize}
+                                    onChange={e => setSelectedPosterSize(e.target.value)}
                                     className="w-full py-3 px-4 rounded-lg border-2 border-main-purple bg-gray-800 text-white text-base font-mono focus:border-purple-400 focus:outline-none"
                                 >
                                     {posterSizes.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {/* Size Selection for Tees */}
+                        {isTeeCategory && (
+                            <div className="space-y-3">
+                                <label htmlFor="tee-size-select" className="block text-white font-medium font-mono text-lg">
+                                    Size
+                                </label>
+                                <select
+                                    id="tee-size-select"
+                                    value={selectedTeeSize}
+                                    onChange={e => setSelectedTeeSize(e.target.value)}
+                                    className="w-full py-3 px-4 rounded-lg border-2 border-main-purple bg-gray-800 text-white text-base font-mono focus:border-purple-400 focus:outline-none"
+                                >
+                                    {TeesSizes.map(opt => (
                                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                                     ))}
                                 </select>

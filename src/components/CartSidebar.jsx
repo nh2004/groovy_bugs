@@ -119,7 +119,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
                 toast.error(response.message || "Failed to save address.", { theme: "dark" });
             }
         } catch (error) {
-            console.error("Error saving address:", error);
+            // console.error("Error saving address:", error); // Removed console.error
             toast.error("An error occurred while saving the address.", { theme: "dark" });
         }
     };
@@ -245,7 +245,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
                 toast.error(response.message || "Failed to add instructions.", { theme: "dark" });
             }
         } catch (error) {
-            console.error("Error adding special instructions:", error);
+            // console.error("Error adding special instructions:", error); // Removed console.error
             toast.error("An error occurred while adding instructions.", { theme: "dark" });
         }
     };
@@ -321,9 +321,8 @@ const CartSidebar = ({ isOpen, onClose }) => {
                                         <div className="flex justify-end gap-2.5 mt-2.5">
                                             <button className="py-2 px-4 rounded cursor-pointer font-bold transition-all bg-transparent text-white border border-gray-600 hover:bg-gray-700 font-mono text-sm" onClick={() => { setSpecialInstructions(""); setShowInstructions(false); }}>Cancel</button>
                                             <button className="py-2 px-4 rounded cursor-pointer font-bold transition-all bg-main-purple text-white border border-main-purple hover:bg-purple-700 font-mono text-sm" onClick={() => {
-                                                toast.success("Instructions added!", { theme: "dark" });
-                                                setShowInstructions(false);
-                                                handleCustomisation(); // <--- Notice the parentheses here!
+                                                setShowInstructions(false); // Only close form here
+                                                handleCustomisation();
                                             }}>Add Note</button>
                                         </div>
                                     </>
@@ -332,14 +331,17 @@ const CartSidebar = ({ isOpen, onClose }) => {
                                 )}
                             </div>
 
-                            {/* Discount Code
+                            {/* Discount Code */}
+                            {/* This section was commented out in your original code, keeping it commented */}
+                            {/*
                             <div className="mb-4">
                                 <div className="flex gap-2">
                                     <input type="text" placeholder="Apply Discount Code" value={discountCodeInput} onChange={(e) => setDiscountCodeInput(e.target.value)} className={`${formInputClass} p-3`} />
                                     <button className="bg-main-purple text-white border-none rounded px-4 text-sm cursor-pointer hover:bg-purple-600 transition-colors font-mono font-bold" onClick={handleApplyDiscount}>Apply</button>
                                 </div>
                                 {appliedDiscount && <p className="mt-2 text-sm text-accent-pink font-mono">Discount '{appliedDiscount.code}' applied ({appliedDiscount.percentage}% off)!</p>}
-                            </div> */}
+                            </div>
+                            */}
 
                             {/* Shipping Address */}
                             <div className="mb-4 border-t border-gray-700 pt-4">
