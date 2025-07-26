@@ -18,7 +18,7 @@ const Navbar = ({ cartCount, onCartClick }) => {
     { href: "/posters", label: "POSTERS" },
     { href: "/shop", label: "SHOP ALL" },
     // { href: "https://www.instagram.com/groovy.bugz/", label: "CONTACT US" },
-    // { href: "/track", label: "TRACK ORDER" },
+    { href: "/track", label: "TRACK ORDER" },
   ];
 
   return (
