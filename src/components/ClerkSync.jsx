@@ -3,31 +3,32 @@ import { useUser } from "@clerk/clerk-react";
 import { useEffect } from "react";
 import axios from "axios";
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
 const ClerkSync = () => {
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn, user } = useUser();
 
-  useEffect(() => {
-    if (isSignedIn && user) {
-      const syncUser = async () => {
-        try {
-          await axios.post("http://localhost:5000/api/users/clerk-sync", {
-            clerkId: user.id, // CHANGED THIS FROM userId to clerkId
+  useEffect(() => {
+    if (isSignedIn && user) {
+      const syncUser = async () => {
+        try {
+          await axios.post(`${API_BASE_URL}/api/users/clerk-sync`, {
+            clerkId: user.id,
             image: user.imageUrl,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.emailAddresses[0]?.emailAddress,
-            
-          });
-          console.log("User synced successfully with backend."); // Add a success log
-        } catch (error) {
-          console.error("Error syncing user:", error.response ? error.response.data : error.message); // More detailed error log
-        }
-      };
-      syncUser();
-    }
-  }, [isSignedIn, user]);
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.emailAddresses[0]?.emailAddress,
+          });
+          console.log("User synced successfully with backend.");
+        } catch (error) {
+          console.error("Error syncing user:", error.response ? error.response.data : error.message);
+        }
+      };
+      syncUser();
+    }
+  }, [isSignedIn, user]);
 
-  return null;
+  return null;
 };
 
 export default ClerkSync;
